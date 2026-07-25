@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Play Wildvault Run, a free browser endless runner with three-lane action, daily routes, personal bests, and score challenges. No signup required." />
+    <meta name="theme-color" content="#07100d" />
+    <link rel="canonical" href="https://wildvault-run.account-subscription.chatgpt.site/free-browser-runner" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%23081713%22/%3E%3Cpath d=%22M16 5 27 16 16 27 5 16Z%22 fill=%22none%22 stroke=%22%23f2be4d%22 stroke-width=%222%22/%3E%3C/svg%3E" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Wildvault Run" />
+    <meta property="og:title" content="Play a free browser endless runner | Wildvault Run" />
+    <meta property="og:description" content="Shift lanes, vault hazards, collect sunshards, and chase a longer run instantly in your browser." />
+    <meta property="og:url" content="https://wildvault-run.account-subscription.chatgpt.site/free-browser-runner" />
+    <meta property="og:image" content="https://wildvault-run.account-subscription.chatgpt.site/wildvault-social-preview.png" />
+    <meta property="og:image:width" content="1440" />
+    <meta property="og:image:height" content="700" />
+    <meta property="og:image:alt" content="Wildvault Run start screen with an explorer facing a forest causeway." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Play a free browser endless runner | Wildvault Run" />
+    <meta name="twitter:description" content="Shift lanes, vault hazards, collect sunshards, and chase a longer run instantly in your browser." />
+    <meta name="twitter:image" content="https://wildvault-run.account-subscription.chatgpt.site/wildvault-social-preview.png" />
+    <meta name="twitter:image:alt" content="Wildvault Run start screen with an explorer facing a forest causeway." />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Play a free browser endless runner",
+        "url": "https://wildvault-run.account-subscription.chatgpt.site/free-browser-runner",
+        "description": "Play Wildvault Run, a free browser endless runner with three-lane action, daily routes, personal bests, and score challenges. No signup required.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "Wildvault Run",
+          "url": "https://wildvault-run.account-subscription.chatgpt.site"
+        },
+        "about": {
+          "@type": "VideoGame",
+          "name": "Wildvault Run",
+          "url": "https://wildvault-run.account-subscription.chatgpt.site",
+          "image": "https://wildvault-run.account-subscription.chatgpt.site/wildvault-social-preview.png",
+          "description": "A three-lane browser endless runner where players dodge hazards, collect sunshards, and push for a longer run.",
+          "genre": "Endless runner",
+          "gamePlatform": "Web browser",
+          "playMode": "SinglePlayer",
+          "inLanguage": "en",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      }
+    </script>
+    <title>Free browser endless runner | Wildvault Run</title>
+    <style>
+      :root {
+        font-family: "Trebuchet MS", "Avenir Next", system-ui, sans-serif;
+        color: #f4f0df;
+        background: #030604;
+        font-synthesis: none;
+        --gold: #f4bc49;
+        --gold-bright: #ffdb78;
+        --ink: #f4f0df;
+        --muted: #aeb3a7;
+        --forest: #07100d;
+        --forest-raised: #0c1b15;
+        --line: rgba(238, 230, 196, 0.16);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 82% 10%, rgba(244, 188, 73, 0.12), transparent 28rem),
+          radial-gradient(circle at 8% 72%, rgba(52, 97, 64, 0.16), transparent 30rem),
+          linear-gradient(180deg, #07100d 0, #030604 42rem);
+      }
+      a { color: inherit; }
+      img { display: block; max-width: 100%; height: auto; }
+      h1, h2, h3, p, figure { margin: 0; }
+      h1, h2, h3 {
+        font-family: Georgia, "Times New Roman", serif;
+        text-wrap: balance;
+      }
+      p { text-wrap: pretty; }
+      .site-header {
+        width: min(1180px, calc(100% - 48px));
+        min-height: 88px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin: 0 auto;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+        font: 700 18px Georgia, serif;
+        letter-spacing: 0.03em;
+      }
+      .brand-mark {
+        width: 20px;
+        height: 20px;
+        transform: rotate(45deg);
+        border: 1px solid var(--gold);
+        background: rgba(244, 188, 73, 0.08);
+        box-shadow: inset 0 0 0 5px rgba(0, 0, 0, 0.65);
+      }
+      .header-note {
+        color: #7f8880;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      main { overflow: hidden; }
+      .hero {
+        width: min(1180px, calc(100% - 48px));
+        display: grid;
+        grid-template-columns: minmax(0, 0.78fr) minmax(460px, 1.22fr);
+        gap: clamp(48px, 7vw, 92px);
+        align-items: center;
+        margin: 64px auto 0;
+      }
+      .hero-copy {
+        display: grid;
+        gap: 24px;
+      }
+      .eyebrow, .section-label, .feature-index {
+        color: var(--gold-bright);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        width: 38px;
+        height: 1px;
+        content: "";
+        background: var(--gold);
+      }
+      h1 {
+        max-width: 9.2ch;
+        font-size: clamp(58px, 7.4vw, 104px);
+        line-height: 0.92;
+        letter-spacing: -0.055em;
+      }
+      .hero-copy > p {
+        max-width: 52ch;
+        color: #c8cdc0;
+        font-size: clamp(16px, 1.8vw, 19px);
+        line-height: 1.6;
+      }
+      .play-now {
+        width: fit-content;
+        min-height: 56px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: 0 20px 0 24px;
+        border: 1px solid #ffe29b;
+        border-radius: 11px;
+        color: #17170f;
+        background: var(--gold);
+        box-shadow: 0 17px 42px rgba(244, 188, 73, 0.22);
+        text-decoration: none;
+        font-weight: 900;
+        transition: transform 160ms ease-out, background 160ms ease-out;
+      }
+      .play-now span {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .play-now:hover, .play-now:focus-visible {
+        transform: translateY(-2px);
+        background: #ffd166;
+      }
+      .play-now:active { transform: translateY(1px); }
+      .play-now:focus-visible, .brand:focus-visible, footer a:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+      }
+      .no-gate {
+        color: #7f8880;
+        font-size: 12px;
+      }
+      .hero-visual {
+        position: relative;
+        padding: 14px;
+        border: 1px solid rgba(180, 202, 179, 0.2);
+        border-radius: 24px;
+        background: rgba(4, 9, 7, 0.72);
+        box-shadow: 0 34px 110px rgba(0, 0, 0, 0.62);
+      }
+      .hero-visual::before {
+        position: absolute;
+        inset: 7% 8% -12%;
+        z-index: -1;
+        content: "";
+        background: rgba(244, 188, 73, 0.14);
+        filter: blur(52px);
+      }
+      .hero-visual img {
+        width: 100%;
+        aspect-ratio: 1440 / 700;
+        object-fit: cover;
+        border-radius: 14px;
+      }
+      .hero-visual figcaption {
+        position: absolute;
+        right: 28px;
+        bottom: 26px;
+        padding: 7px 10px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        color: #d6d8ce;
+        background: rgba(3, 8, 6, 0.78);
+        backdrop-filter: blur(12px);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .section {
+        width: min(1180px, calc(100% - 48px));
+        margin: 144px auto 0;
+      }
+      .section-heading {
+        display: grid;
+        grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
+        gap: 48px;
+        align-items: end;
+        margin-bottom: 48px;
+      }
+      .section-heading h2 {
+        max-width: 12ch;
+        margin-top: 14px;
+        font-size: clamp(42px, 5.5vw, 68px);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+      }
+      .section-heading p {
+        max-width: 58ch;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      .chase-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.72fr);
+        gap: 24px;
+        align-items: stretch;
+      }
+      .chase-layout figure {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--forest);
+      }
+      .chase-layout figure img {
+        width: 100%;
+        height: 100%;
+        min-height: 460px;
+        object-fit: cover;
+        object-position: 52% center;
+      }
+      .features {
+        display: grid;
+        align-content: center;
+        gap: 0;
+        padding: 20px 32px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(12, 27, 21, 0.72);
+      }
+      .feature {
+        padding: 28px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .feature:last-child { border-bottom: 0; }
+      .feature h3 {
+        margin-top: 10px;
+        font-size: 28px;
+        letter-spacing: -0.025em;
+      }
+      .feature p {
+        max-width: 40ch;
+        margin-top: 10px;
+        color: #b9c0b6;
+        line-height: 1.55;
+      }
+      .movement {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+        gap: 72px;
+        align-items: start;
+        padding: 64px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background:
+          radial-gradient(circle at 78% 12%, rgba(244, 188, 73, 0.09), transparent 24rem),
+          rgba(12, 27, 21, 0.62);
+      }
+      .movement h2 {
+        max-width: 10ch;
+        margin-top: 14px;
+        font-size: clamp(40px, 5vw, 64px);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+      }
+      .control-list {
+        display: grid;
+        gap: 0;
+        margin: 0;
+      }
+      .control-list div {
+        display: grid;
+        grid-template-columns: 104px 1fr;
+        gap: 20px;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .control-list div:first-child { padding-top: 0; }
+      .control-list div:last-child { border-bottom: 0; }
+      .control-list dt {
+        color: var(--gold-bright);
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .control-list dd {
+        margin: 0;
+        color: #c6cbc2;
+        line-height: 1.55;
+      }
+      .closing {
+        width: min(1180px, calc(100% - 48px));
+        margin: 144px auto 0;
+        padding: 64px 0 72px;
+        border-top: 1px solid var(--line);
+      }
+      .closing p {
+        max-width: 31ch;
+        font: 400 clamp(34px, 5vw, 62px)/1.05 Georgia, serif;
+        letter-spacing: -0.04em;
+        text-wrap: balance;
+      }
+      footer {
+        min-height: 64px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        color: #68716b;
+        font-size: 10px;
+      }
+      footer a {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: inherit;
+        text-decoration: none;
+      }
+      footer svg { width: 1em; height: 1em; }
+      @media (max-width: 880px) {
+        .hero { grid-template-columns: 1fr; }
+        .hero-copy { width: min(680px, 100%); }
+        h1 { max-width: 10ch; }
+        .hero-visual { width: min(760px, 100%); }
+      }
+      @media (max-width: 760px) {
+        .site-header, .hero, .section, .closing { width: min(100% - 32px, 1180px); }
+        .site-header { min-height: 76px; }
+        .brand { font-size: 16px; }
+        .header-note { display: none; }
+        .hero { gap: 36px; margin-top: 42px; }
+        .hero-copy { gap: 19px; }
+        h1 { font-size: clamp(52px, 15.5vw, 76px); }
+        .play-now { min-height: 52px; }
+        .hero-visual { padding: 8px; border-radius: 16px; }
+        .hero-visual img { min-height: 280px; object-position: 57% center; border-radius: 10px; }
+        .hero-visual figcaption { right: 16px; bottom: 16px; }
+        .section { margin-top: 96px; }
+        .section-heading, .chase-layout, .movement { grid-template-columns: 1fr; }
+        .section-heading { gap: 18px; margin-bottom: 32px; }
+        .section-heading h2 { font-size: 46px; }
+        .chase-layout figure img { min-height: 320px; }
+        .features { padding: 10px 24px; }
+        .feature { padding: 24px 0; }
+        .movement { gap: 44px; padding: 34px 24px; }
+        .control-list div { grid-template-columns: 82px 1fr; gap: 16px; }
+        .closing { margin-top: 96px; padding: 48px 0; }
+      }
+      @media (max-width: 420px) {
+        .play-now span { display: none; }
+        .hero-visual img { min-height: 250px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        * { transition-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Wildvault Run home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Wildvault</span>
+      </a>
+      <span class="header-note">No signup · desktop and mobile</span>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="runner-title">
+        <div class="hero-copy">
+          <div class="eyebrow">Free browser endless runner</div>
+          <h1 id="runner-title">Run the ruins. Chase the next meter.</h1>
+          <p>Shift across three lanes, vault hazards, slide beneath ruins, and collect sunshards as the causeway gets faster. Wildvault Run starts instantly in your browser.</p>
+          <a class="play-now" href="/?utm_source=free-browser-runner&amp;utm_medium=organic&amp;utm_campaign=browser-runner-page">
+            Play now
+            <span aria-hidden="true">→</span>
+          </a>
+          <span class="no-gate">Free to play. No account or download required.</span>
+        </div>
+        <figure class="hero-visual">
+          <img src="/wildvault-social-preview.png" width="1440" height="700" alt="Wildvault Run start screen with an explorer, forest ruins, and a three-lane causeway." />
+          <figcaption>Live game capture</figcaption>
+        </figure>
+      </section>
+
+      <section class="section" aria-labelledby="chase-title">
+        <div class="section-heading">
+          <div>
+            <div class="section-label">Built for another run</div>
+            <h2 id="chase-title">Every finish leaves a target.</h2>
+          </div>
+          <p>A run ends quickly, but it does not disappear. Your best distance stays on this device, a shared daily route arrives each UTC day, and result links let another player chase the same score.</p>
+        </div>
+        <div class="chase-layout">
+          <figure>
+            <img src="/wildvault-mobile-gameplay.png" width="390" height="844" alt="Wildvault Run on a mobile screen with touch-ready play controls." />
+          </figure>
+          <div class="features">
+            <article class="feature">
+              <span class="feature-index">01 · Personal best</span>
+              <h3>See the record getting closer.</h3>
+              <p>Your best distance and sunshard total survive a reload, with a restrained in-run marker to pace the next attempt.</p>
+            </article>
+            <article class="feature">
+              <span class="feature-index">02 · Daily route</span>
+              <h3>One shared course each day.</h3>
+              <p>Every player gets the same date-seeded obstacle route, plus a separate daily best and consecutive-day streak.</p>
+            </article>
+            <article class="feature">
+              <span class="feature-index">03 · Score challenge</span>
+              <h3>Send a distance to beat.</h3>
+              <p>Shared results carry the target into the link, then report whether the next runner beat, tied, or missed it.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="controls-title">
+        <div class="movement">
+          <div>
+            <div class="section-label">Controls</div>
+            <h2 id="controls-title">Natural on keys or touch.</h2>
+          </div>
+          <dl class="control-list">
+            <div>
+              <dt>Shift</dt>
+              <dd>Use the left and right arrow keys, or swipe sideways on a touch screen.</dd>
+            </div>
+            <div>
+              <dt>Vault</dt>
+              <dd>Press the up arrow or swipe up to clear barriers and broken sections.</dd>
+            </div>
+            <div>
+              <dt>Slide</dt>
+              <dd>Press the down arrow or swipe down to pass beneath low hazards.</dd>
+            </div>
+            <div>
+              <dt>Pause</dt>
+              <dd>Use P, Esc, or the on-screen pause control. Hidden tabs pause an active run automatically.</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="closing" aria-label="Wildvault Run closing statement">
+        <p>Open the game. Pick a route. Run until the vault catches up.</p>
+      </section>
+    </main>
+    <footer>
+      <span>© 2026 Wildvault</span>
+      <span>•</span>
+      <a href="/press-kit">Player press kit</a>
+      <span>•</span>
+      <a href="https://tin.computer" target="_blank" rel="noreferrer">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#66DC9D" /></svg>
+        Growth by Tin
+      </a>
+    </footer>
+  </body>
+</html>

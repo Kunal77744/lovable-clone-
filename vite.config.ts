@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         game: resolve(__dirname, "index.html"),
         pressKit: resolve(__dirname, "press-kit/index.html"),
+        freeBrowserRunner: resolve(__dirname, "free-browser-runner/index.html"),
       },
     },
   },

@@ -7,6 +7,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
 const indexPath = resolve(dist, "index.html");
 const pressKitPath = resolve(dist, "press-kit", "index.html");
+const freeBrowserRunnerPath = resolve(dist, "free-browser-runner", "index.html");
 const socialImagePath = resolve(dist, "wildvault-social-preview.png");
 const mobileScreenshotPath = resolve(dist, "wildvault-mobile-gameplay.png");
 const gameplayClipPath = resolve(dist, "wildvault-gameplay.mp4");
@@ -20,6 +21,7 @@ const gameUrl = "https://wildvault-run.account-subscription.chatgpt.site";
 
 let html = await readFile(indexPath, "utf8");
 const pressKitHtml = await readFile(pressKitPath, "utf8");
+const freeBrowserRunnerHtml = await readFile(freeBrowserRunnerPath, "utf8");
 const socialImageBase64 = (await readFile(socialImagePath)).toString("base64");
 const mobileScreenshotBase64 = (await readFile(mobileScreenshotPath)).toString("base64");
 const gameplayClipBase64 = (await readFile(gameplayClipPath)).toString("base64");
@@ -155,6 +157,7 @@ await writeFile(
   workerPath,
   `const html = ${JSON.stringify(html)};
 const pressKitHtml = ${JSON.stringify(pressKitHtml)};
+const freeBrowserRunnerHtml = ${JSON.stringify(freeBrowserRunnerHtml)};
 const robots = ${JSON.stringify(robots)};
 const sitemap = ${JSON.stringify(sitemap)};
 const manifest = ${JSON.stringify(manifest)};
@@ -297,6 +300,9 @@ export default {
     }
     if (url.pathname === "/press-kit" || url.pathname === "/press-kit/") {
       return new Response(pressKitHtml, { headers: htmlHeaders });
+    }
+    if (url.pathname === "/free-browser-runner" || url.pathname === "/free-browser-runner/") {
+      return new Response(freeBrowserRunnerHtml, { headers: htmlHeaders });
     }
     if (url.pathname !== "/" && url.pathname !== "/index.html") {
       return new Response("Not found", { status: 404 });
