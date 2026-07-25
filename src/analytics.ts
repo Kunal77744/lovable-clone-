@@ -5,10 +5,13 @@ const POSTHOG_HOST = "https://us.i.posthog.com";
 const SESSION_PREFIX = "wildvault_analytics:";
 const RUN_NUMBER_KEY = `${SESSION_PREFIX}run_number`;
 const sentThisPage = new Set<string>();
+const sharedRunNumbers = new Set<number>();
 let runNumberFallback = 0;
 
 type RenderingMode = "webgl" | "canvas";
 type HazardKind = "crate" | "arch" | "spikes";
+type RunMode = "free" | "daily";
+type ShareMethod = "native" | "clipboard";
 
 function deviceType() {
   const mobileUserAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -61,7 +64,11 @@ export function captureGameOpened(renderingMode: RenderingMode) {
   });
 }
 
-export function captureRunStarted(renderingMode: RenderingMode) {
+export function captureRunStarted(
+  renderingMode: RenderingMode,
+  runMode: RunMode,
+  challengePresent: boolean,
+) {
   let runNumber = runNumberFallback + 1;
 
   try {
@@ -79,6 +86,34 @@ export function captureRunStarted(renderingMode: RenderingMode) {
 
   posthog.capture("run_started", {
     run_number: runNumber,
+    run_mode: runMode,
+    challenge_present: challengePresent,
+    device_type: deviceType(),
+    rendering_mode: renderingMode,
+  });
+
+  return runNumber;
+}
+
+export function captureRunResultShared(
+  renderingMode: RenderingMode,
+  runNumber: number,
+  runMode: RunMode,
+  challengePresent: boolean,
+  shareMethod: ShareMethod,
+  distance: number,
+  relics: number,
+) {
+  if (sharedRunNumbers.has(runNumber)) return;
+  sharedRunNumbers.add(runNumber);
+
+  posthog.capture("run_result_shared", {
+    run_number: runNumber,
+    run_mode: runMode,
+    challenge_present: challengePresent,
+    share_method: shareMethod,
+    distance_m: Math.max(0, Math.min(99_999, Math.floor(distance))),
+    relic_count: Math.max(0, Math.min(9_999, Math.floor(relics))),
     device_type: deviceType(),
     rendering_mode: renderingMode,
   });

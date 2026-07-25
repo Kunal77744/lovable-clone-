@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import "./style.css";
-import { captureFirstValue, captureGameOpened, captureRunStarted } from "./analytics";
+import { captureFirstValue, captureGameOpened, captureRunResultShared, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
 import { readChallengeDistance, readDailyChallenge, shareRunResult } from "./share-result";
@@ -154,7 +154,7 @@ function makeHazard(kind:HazardKind){
   cast(g);return g;
 }
 
-let state:State="ready",activeMode:RunMode="free",lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
+let state:State="ready",activeMode:RunMode="free",activeRunNumber=0,lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
 let personalBest=readPersonalBest();
 let dailyKey=dailyChallenge?.date??getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
@@ -174,7 +174,7 @@ function reset(){
 }
 function start(mode:RunMode){
   if(state!=="ready"&&state!=="gameover")return;
-  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;state="countdown";captureRunStarted(renderer?"webgl":"canvas");let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
+  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;state="countdown";activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
   const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
 }
 function gameOver(){
@@ -304,6 +304,9 @@ shareButton.addEventListener("click",async()=>{
   const result=await shareRunResult(Math.floor(distance),activeMode==="daily"?dailyKey:undefined);
   shareStatus.textContent=result.message;
   shareStatus.dataset.state=result.outcome;
+  if(result.outcome==="shared"||result.outcome==="copied"){
+    captureRunResultShared(renderer?"webgl":"canvas",activeRunNumber,activeMode,challengeTarget!==null,result.outcome==="shared"?"native":"clipboard",distance,relics);
+  }
   shareButton.disabled=false;
 });
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
