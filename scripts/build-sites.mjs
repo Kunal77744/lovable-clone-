@@ -18,6 +18,10 @@ const serviceWorkerPath = resolve(dist, "sw.js");
 const icon192Path = resolve(dist, "icon-192.png");
 const icon512Path = resolve(dist, "icon-512.png");
 const gameUrl = "https://wildvault-run.account-subscription.chatgpt.site";
+const socialArtworkRuntime = await readFile(
+  resolve(root, "scripts", "social-artwork-runtime.js"),
+  "utf8",
+);
 
 let html = await readFile(indexPath, "utf8");
 const pressKitHtml = await readFile(pressKitPath, "utf8");
@@ -93,8 +97,11 @@ function renderSocialHtml(source, url, now = new Date()) {
   const score = preview.distance.toLocaleString("en-US");
   let title;
   let description;
+  let imageAlt;
   const shareUrl = new URL(gameUrl);
+  const imageUrl = new URL(challengeArtworkPath, gameUrl);
   shareUrl.searchParams.set("challenge", String(preview.distance));
+  imageUrl.searchParams.set("challenge", String(preview.distance));
 
   if (preview.kind === "daily") {
     const routeDate = new Intl.DateTimeFormat("en-US", {
@@ -104,19 +111,33 @@ function renderSocialHtml(source, url, now = new Date()) {
     }).format(new Date(`${preview.date}T00:00:00Z`));
     title = `Beat ${score}m on Wildvault's ${routeDate} daily route`;
     description = `Take the ${routeDate} Wildvault daily challenge on the same route and see if you can beat ${score}m.`;
+    imageAlt = `Wildvault Run ${preview.date} daily route challenge artwork showing ${score}m to beat.`;
     shareUrl.searchParams.set("mode", "daily");
     shareUrl.searchParams.set("date", preview.date);
+    imageUrl.searchParams.set("mode", "daily");
+    imageUrl.searchParams.set("date", preview.date);
   } else {
     title = `Beat ${score}m in Wildvault Run`;
     description = `A Wildvault runner reached ${score}m. Take the challenge and see if you can go farther.`;
+    imageAlt = `Wildvault Run challenge artwork showing ${score}m to beat.`;
   }
 
   let rendered = replaceMeta(source, "name", "description", description);
   rendered = replaceMeta(rendered, "property", "og:title", title);
   rendered = replaceMeta(rendered, "property", "og:description", description);
   rendered = replaceMeta(rendered, "property", "og:url", shareUrl.toString());
+  rendered = replaceMeta(rendered, "property", "og:image", imageUrl.toString());
+  rendered = replaceMeta(
+    rendered,
+    "property",
+    "og:image:secure_url",
+    imageUrl.toString(),
+  );
+  rendered = replaceMeta(rendered, "property", "og:image:alt", imageAlt);
   rendered = replaceMeta(rendered, "name", "twitter:title", title);
   rendered = replaceMeta(rendered, "name", "twitter:description", description);
+  rendered = replaceMeta(rendered, "name", "twitter:image", imageUrl.toString());
+  rendered = replaceMeta(rendered, "name", "twitter:image:alt", imageAlt);
   return rendered.replace(
     /<title>[^<]*<\/title>/i,
     `<title>${escapeHtmlAttribute(title)}</title>`,
@@ -317,6 +338,8 @@ let worker = await readFile(workerPath, "utf8");
 const socialPreviewRuntime = `
 const gameUrl = ${JSON.stringify(gameUrl)};
 
+${socialArtworkRuntime}
+
 ${escapeHtmlAttribute.toString()}
 
 ${replaceMeta.toString()}
@@ -328,6 +351,40 @@ ${renderSocialHtml.toString()}
 worker = worker.replace(
   "\n\nexport default {",
   `${socialPreviewRuntime}\nexport default {`,
+);
+worker = worker.replace(
+  "    if (url.pathname === \"/wildvault-social-preview.png\" || url.pathname === \"/wildvault-mobile-gameplay.png\") {",
+  `    if (url.pathname === challengeArtworkPath) {
+      const preview = readSocialPreview(url, new Date().toISOString().slice(0, 10));
+      if (!preview) {
+        return new Response(socialImage, {
+          headers: {
+            "content-type": "image/png",
+            "content-length": String(socialImage.byteLength),
+            "cache-control": "public, max-age=300, must-revalidate",
+            "x-content-type-options": "nosniff",
+          },
+        });
+      }
+
+      const image = await renderChallengeArtwork(preview);
+      const cacheControl = preview.kind === "daily"
+        ? "public, max-age=" + Math.max(0, Math.floor((Date.UTC(
+            new Date().getUTCFullYear(),
+            new Date().getUTCMonth(),
+            new Date().getUTCDate() + 1,
+          ) - Date.now()) / 1000)) + ", must-revalidate"
+        : "public, max-age=31536000, immutable";
+      return new Response(image, {
+        headers: {
+          "content-type": "image/png",
+          "content-length": String(image.byteLength),
+          "cache-control": cacheControl,
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/wildvault-social-preview.png" || url.pathname === "/wildvault-mobile-gameplay.png") {`,
 );
 worker = worker.replace(
   "return new Response(html, {",
