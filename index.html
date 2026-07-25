@@ -48,10 +48,18 @@
           <h1>Run the<br><em>Wildshard.</em></h1>
           <p>The old causeway is collapsing. Take the sunshards and stay ahead of what woke beneath it.</p>
           <button id="start-button" class="primary-button" type="button"><span>Enter the vault</span><b>→</b></button>
-          <div class="controls-copy">
-            <span><kbd>←</kbd><kbd>→</kbd> Shift</span>
-            <span><kbd>↑</kbd> Vault</span>
-            <span><kbd>↓</kbd> Slide</span>
+          <div id="controls-copy" class="controls-copy" data-input="keyboard">
+            <div class="control-guide" data-control-guide="keyboard" aria-label="Keyboard controls">
+              <span><kbd>←</kbd><kbd>→</kbd> Shift</span>
+              <span><kbd>↑</kbd> Vault</span>
+              <span><kbd>↓</kbd> Slide</span>
+            </div>
+            <div class="control-guide touch-guide" data-control-guide="touch" aria-label="Swipe left or right to shift, up to vault, and down to slide" hidden>
+              <strong>Swipe</strong>
+              <span><i aria-hidden="true">↔</i> Shift</span>
+              <span><i aria-hidden="true">↑</i> Vault</span>
+              <span><i aria-hidden="true">↓</i> Slide</span>
+            </div>
           </div>
         </div>
 

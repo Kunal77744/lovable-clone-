@@ -17,6 +17,21 @@ const distanceEl=$("#distance"),relicEl=$("#relics"),multiplierEl=$("#multiplier
 const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLines=$("#speed-lines");
 const bestDistanceEl=$("#best-distance"),bestRelicsEl=$("#best-relics"),recordStatusEl=$("#record-status");
 const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-status");
+const controlsCopy=$("#controls-copy");
+const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
+const coarsePointer=matchMedia("(pointer: coarse)");
+
+function setControlGuide(input:"keyboard"|"touch"){
+  controlsCopy.dataset.input=input;
+  controlGuides.forEach(guide=>guide.hidden=guide.dataset.controlGuide!==input);
+}
+function setCapabilityGuide(){setControlGuide(coarsePointer.matches||navigator.maxTouchPoints>0?"touch":"keyboard")}
+setCapabilityGuide();
+coarsePointer.addEventListener("change",setCapabilityGuide);
+addEventListener("pointerdown",event=>{
+  if(event.pointerType==="touch"||event.pointerType==="pen")setControlGuide("touch");
+  else if(event.pointerType==="mouse"&&!coarsePointer.matches)setControlGuide("keyboard");
+},{passive:true});
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07100d);
@@ -236,7 +251,7 @@ function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running
 }
 function render(now:number){const dt=(now-last)/1000;last=now;update(dt);if(renderer)renderer.render(scene,camera);else drawFallback();requestAnimationFrame(render)}
 function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.setSize(r.width,r.height,false);else{canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}camera.aspect=r.width/r.height;camera.fov=r.width/r.height<.8?64:51;camera.updateProjectionMatrix()}
-function key(e:KeyboardEvent){if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start();if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
+function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start();if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
 $("#start-button").addEventListener("click",start);$("#restart-button").addEventListener("click",start);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 shareButton.addEventListener("click",async()=>{
