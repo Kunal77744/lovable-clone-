@@ -54,7 +54,10 @@
             <div class="hud-item relic-hud"><span>Sunshards</span><strong><i class="shard-icon"></i><b id="relics">0</b></strong></div>
             <div class="multiplier" id="multiplier">×1</div>
           </div>
-          <button id="sound-toggle" class="icon-button" type="button" aria-label="Toggle sound"><span>◖</span></button>
+          <div class="topbar-actions">
+            <button id="pause-button" class="icon-button pause-button" type="button" aria-label="Pause run" hidden><span>Ⅱ</span></button>
+            <button id="sound-toggle" class="icon-button" type="button" aria-label="Toggle sound"><span>◖</span></button>
+          </div>
         </header>
 
         <div id="start-panel" class="start-panel">
@@ -89,6 +92,15 @@
         <div id="countdown" class="countdown" hidden></div>
         <div id="toast" class="toast" aria-live="assertive"></div>
         <div id="mission" class="mission" hidden><span id="mission-label">Relic chain</span><strong id="chain">0 / 5</strong></div>
+
+        <div id="pause-panel" class="pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title" hidden>
+          <div class="chapter"><span></span> Expedition held</div>
+          <h2 id="pause-title">Run paused.</h2>
+          <p id="pause-copy">Your route and score are safe.</p>
+          <div class="pause-distance"><span>Held at</span><strong><b id="pause-distance">0</b>m</strong></div>
+          <button id="resume-button" class="primary-button" type="button"><span>Resume in 3</span><b>→</b></button>
+          <small id="pause-hint">Press P or Esc to continue</small>
+        </div>
 
         <div id="game-over-panel" class="game-over-panel" hidden>
           <div class="chapter"><span></span><b id="record-status">Expedition ended</b></div>

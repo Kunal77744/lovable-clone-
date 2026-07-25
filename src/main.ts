@@ -5,7 +5,7 @@ import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveD
 import { readPersonalBest, savePersonalBest } from "./personal-best";
 import { readChallengeDistance, readDailyChallenge, shareRunResult } from "./share-result";
 
-type State = "ready"|"countdown"|"running"|"gameover";
+type State = "ready"|"countdown"|"running"|"paused"|"gameover";
 type RunMode = "free"|"daily";
 type HazardKind = "crate"|"arch"|"spikes";
 interface Hazard{mesh:THREE.Group;kind:HazardKind;lane:number;z:number;checked:boolean;passed:boolean}
@@ -14,6 +14,7 @@ interface Spark{mesh:THREE.Mesh;velocity:THREE.Vector3;life:number}
 
 const $=<T extends HTMLElement>(s:string)=>document.querySelector<T>(s)!;
 const canvas=$("#game") as HTMLCanvasElement;
+const gameFrame=$(".game-frame");
 const startPanel=$("#start-panel"),gameOverPanel=$("#game-over-panel"),countdown=$("#countdown");
 const distanceEl=$("#distance"),relicEl=$("#relics"),multiplierEl=$("#multiplier"),toast=$("#toast");
 const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLines=$("#speed-lines");
@@ -25,6 +26,8 @@ const challengeResult=$("#challenge-result"),challengeResultCopy=$("#challenge-r
 const dailyButton=$("#daily-button") as HTMLButtonElement,dailyDateEl=$("#daily-date"),dailyStartBestEl=$("#daily-start-best");
 const dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),missionLabel=$("#mission-label");
 const startButtonCopy=$("#start-button-copy");
+const pausePanel=$("#pause-panel"),pauseCopy=$("#pause-copy"),pauseDistance=$("#pause-distance"),pauseHint=$("#pause-hint");
+const pauseButton=$("#pause-button") as HTMLButtonElement,resumeButton=$("#resume-button") as HTMLButtonElement;
 const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
 const coarsePointer=matchMedia("(pointer: coarse)");
 const challengeTarget=readChallengeDistance(location.search);
@@ -42,6 +45,7 @@ if(challengeTarget!==null){
 
 function setControlGuide(input:"keyboard"|"touch"){
   controlsCopy.dataset.input=input;
+  pauseHint.textContent=input==="touch"?"Tap Resume to continue":"Press P or Esc to continue";
   controlGuides.forEach(guide=>guide.hidden=guide.dataset.controlGuide!==input);
 }
 function setCapabilityGuide(){setControlGuide(coarsePointer.matches||navigator.maxTouchPoints>0?"touch":"keyboard")}
@@ -73,6 +77,7 @@ if(webglAvailable){
   }catch{renderer=null}
 }
 if(!renderer)fallback=canvas.getContext("2d");
+gameFrame.dataset.renderingMode=renderer?"webgl":"canvas";
 
 const hemi=new THREE.HemisphereLight(0x9ec6ac,0x172019,1.75);scene.add(hemi);
 const sun=new THREE.DirectionalLight(0xffd486,3.2);sun.position.set(-8,16,12);sun.castShadow=true;
@@ -154,7 +159,8 @@ function makeHazard(kind:HazardKind){
   cast(g);return g;
 }
 
-let state:State="ready",activeMode:RunMode="free",activeRunNumber=0,lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
+let state:State="ready",activeMode:RunMode="free",activeRunNumber=0,lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),visualTime=0,toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
+let countdownTimer:number|undefined;
 let personalBest=readPersonalBest();
 let dailyKey=dailyChallenge?.date??getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
@@ -172,16 +178,51 @@ function reset(){
   if(activeMode==="daily"){dailyKey=dailyChallenge?.date??getUtcDateKey();dailyBest=readDailyBest(dailyKey);dailyRandom=createDailyRandom(dailyKey)}
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
+function clearCountdown(){
+  if(countdownTimer!==undefined)clearTimeout(countdownTimer);
+  countdownTimer=undefined;
+  countdown.hidden=true;
+}
+function setState(next:State){
+  state=next;
+  gameFrame.dataset.state=next;
+  const active=next==="countdown"||next==="running"||next==="paused";
+  pauseButton.hidden=!active;
+  pauseButton.setAttribute("aria-label",next==="paused"?"Resume run":"Pause run");
+  pauseButton.querySelector("span")!.textContent=next==="paused"?"▶":"Ⅱ";
+}
+function beginCountdown(){
+  clearCountdown();setState("countdown");pausePanel.hidden=true;countdown.hidden=false;let n=3;countdown.textContent=String(n);ping(300);
+  const tick=()=>{
+    if(state!=="countdown")return;
+    n--;
+    if(n>0){countdown.textContent=String(n);ping(340+n*70);countdownTimer=window.setTimeout(tick,520);return}
+    countdown.textContent="GO";ping(650);
+    countdownTimer=window.setTimeout(()=>{if(state!=="countdown")return;countdown.hidden=true;countdownTimer=undefined;last=performance.now();setState("running")},380);
+  };
+  countdownTimer=window.setTimeout(tick,520);
+}
+function pauseRun(automatic=false){
+  if(state!=="running"&&state!=="countdown")return;
+  clearCountdown();setState("paused");pauseDistance.textContent=String(Math.floor(distance));
+  pauseCopy.textContent=automatic?"Paused while you were away. Your route and score are safe.":"Your route and score are safe.";
+  pausePanel.hidden=false;
+  if(audio?.state==="running")void audio.suspend();
+  resumeButton.focus({preventScroll:true});
+}
+function resumeRun(){
+  if(state!=="paused")return;
+  ensureAudio();last=performance.now();beginCountdown();
+}
 function start(mode:RunMode){
   if(state!=="ready"&&state!=="gameover")return;
-  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;state="countdown";activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
-  const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
+  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
 }
 function gameOver(){
   const runDistance=Math.floor(distance),previousBest=personalBest;
   personalBest=savePersonalBest({distance:runDistance,relics});
   const distanceRecord=runDistance>previousBest.distance,relicRecord=relics>previousBest.relics;
-  state="gameover";shake=.8;mission.hidden=true;$("#final-distance").textContent=String(runDistance);$("#final-relics").textContent=String(relics);$("#final-chain").textContent=`×${bestCombo}`;
+  clearCountdown();setState("gameover");shake=.8;mission.hidden=true;$("#final-distance").textContent=String(runDistance);$("#final-relics").textContent=String(relics);$("#final-chain").textContent=`×${bestCombo}`;
   bestDistanceEl.textContent=String(personalBest.distance);bestRelicsEl.textContent=String(personalBest.relics);
   recordStatusEl.textContent=distanceRecord&&relicRecord?"Two new records":distanceRecord?"New distance record":relicRecord?"New sunshard record":"Expedition ended";
   $("#run-summary").textContent=distance>700?"You reached the sunken gate.":distance>300?"The vault has started to notice you.":"The causeway demands another run.";
@@ -222,10 +263,13 @@ function jump(){if(state!=="running"||jumpY>.03||slide>0)return;jumpV=8.7;ping(2
 function duck(){if(state!=="running"||jumpY>.08)return;slide=.72;ping(150)}
 
 function update(dt:number){
-  const d=Math.min(dt,.033);const running=state==="running";const worldSpeed=running?speed:2.2;
+  const d=Math.min(dt,.033);
+  if(state==="paused")return;
+  visualTime+=d;
+  const running=state==="running";const worldSpeed=running?speed:2.2;
   roadTiles.forEach(t=>{t.position.z+=worldSpeed*d;if(t.position.z>8)t.position.z-=22*5.7});
   sideProps.forEach(p=>{p.position.z+=worldSpeed*d*.92;if(p.position.z>15)p.position.z-=22*7.3});
-  const runT=performance.now()*.001*(running?8.5:1.1);
+  const runT=visualTime*(running?8.5:1.1);
   runner.position.x+=(targetX-runner.position.x)*Math.min(1,d*14);runner.position.y=jumpY;
   const runnerScale=state==="ready"&&innerWidth<760?.64:.92;runner.scale.setScalar(runner.scale.x+(runnerScale-runner.scale.x)*Math.min(1,d*8));
   runner.rotation.z*=Math.pow(.03,d);hips.position.y=(running?Math.abs(Math.sin(runT))*0.13:Math.sin(runT)*.03)+(slide>0?-.75:0);
@@ -260,20 +304,20 @@ function drawFallback(){
   const hy=h*.29,gy=h*.95;c.fillStyle="#2d4438";c.beginPath();c.moveTo(w*.47,hy);c.lineTo(w*.53,hy);c.lineTo(w*.91,gy);c.lineTo(w*.09,gy);c.closePath();c.fill();
   c.strokeStyle="rgba(204,215,188,.24)";c.lineWidth=3;c.beginPath();c.moveTo(w*.47,hy);c.lineTo(w*.09,gy);c.moveTo(w*.53,hy);c.lineTo(w*.91,gy);c.stroke();
   c.fillStyle="#13271e";c.beginPath();c.moveTo(0,h*.57);c.lineTo(w*.11,h*.5);c.lineTo(w*.17,h*.62);c.lineTo(w*.25,h*.56);c.lineTo(w*.28,h);c.lineTo(0,h);c.fill();c.beginPath();c.moveTo(w,h*.5);c.lineTo(w*.88,h*.43);c.lineTo(w*.8,h*.62);c.lineTo(w*.75,h*.56);c.lineTo(w*.72,h);c.lineTo(w,h);c.fill();
-  const travel=(performance.now()*.001*(run?speed*.025:.04))%1;
+  const travel=(visualTime*(run?speed*.025:.04))%1;
   for(let i=0;i<16;i++){const p=(i/15+travel)%1,y=hy+Math.pow(p,1.72)*(gy-hy),half=w*(.03+p*.4);c.fillStyle=i%2?"rgba(88,111,95,.2)":"rgba(25,49,39,.14)";c.beginPath();c.moveTo(w/2-half,y);const ny=hy+Math.pow(Math.min(1,p+.055),1.72)*(gy-hy),nh=w*(.03+Math.min(1,p+.055)*.4);c.lineTo(w/2+half,y);c.lineTo(w/2+nh,ny);c.lineTo(w/2-nh,ny);c.fill();c.strokeStyle=`rgba(226,220,187,${.05+p*.22})`;c.lineWidth=1+p*2;c.beginPath();c.moveTo(w/2-half,y);c.lineTo(w/2+half,y);c.stroke()}
   for(const div of[-.33,.33]){c.strokeStyle="rgba(220,225,198,.1)";c.beginPath();c.moveTo(w/2+div*w*.04,hy);c.lineTo(w/2+div*w*.38,gy);c.stroke()}
   for(let i=0;i<12;i++){const p=(i/12+travel*.7)%1,y=hy+Math.pow(p,1.6)*(gy-hy),s=.12+p*1.3,side=i%2?-1:1,x=w/2+side*w*(.09+p*.43);c.save();c.translate(x,y);c.fillStyle=i%3?"#365747":"#536a5c";c.beginPath();c.moveTo(-15*s,0);c.lineTo(-13*s,-72*s);c.lineTo(-9*s,-83*s);c.lineTo(11*s,-78*s);c.lineTo(15*s,0);c.closePath();c.fill();c.fillStyle="#10241c";c.fillRect(-7*s,-62*s,14*s,18*s);c.strokeStyle="rgba(190,205,180,.22)";c.lineWidth=Math.max(1,s);c.stroke();if(i%3===0){c.fillStyle="rgba(244,188,73,.16)";c.beginPath();c.arc(0,-72*s,29*s,0,Math.PI*2);c.fill();c.fillStyle="#d7a43c";c.beginPath();c.arc(0,-72*s,5*s,0,Math.PI*2);c.fill()}if(i%4===1){c.fillStyle="#183a2b";for(let j=0;j<5;j++){c.beginPath();c.ellipse((j-2)*11*s,-20*s-Math.abs(j-2)*9*s,20*s,8*s,-.5+j*.25,0,Math.PI*2);c.fill()}}c.restore()}
   if(run&&speed>18){c.strokeStyle="rgba(236,225,184,.13)";for(let i=0;i<18;i++){const x=(i*83%w),y=h*(.28+(i%7)*.095);c.lineWidth=1+(i%3);c.beginPath();c.moveTo(x,y);c.lineTo(x+(i%2?38:-38),y+36);c.stroke()}}
   const project=(l:number,z:number)=>{const p=Math.max(0,Math.min(1,(z+82)/86));return{x:w/2+l*w*.12*Math.pow(p,.95),y:hy+Math.pow(p,1.65)*(gy-hy),s:.1+Math.pow(p,1.6)*1.15}};
   [...hazards].sort((a,b)=>a.z-b.z).forEach(o=>{const p=project(o.lane,o.z),s=p.s;c.save();c.translate(p.x,p.y);c.shadowColor="rgba(0,0,0,.5)";c.shadowBlur=12*s;if(o.kind==="crate"){c.fillStyle="#51675b";c.fillRect(-46*s,-68*s,92*s,68*s);c.fillStyle="#d7a43c";c.fillRect(-49*s,-43*s,98*s,12*s);c.strokeStyle="#aebdaa";c.strokeRect(-46*s,-68*s,92*s,68*s)}else if(o.kind==="spikes"){c.fillStyle="#dfaa3d";for(let j=-2;j<=2;j++){c.beginPath();c.moveTo((j*19-10)*s,0);c.lineTo(j*19*s,-60*s);c.lineTo((j*19+10)*s,0);c.fill()}}else{c.fillStyle="#51675b";c.fillRect(-64*s,-140*s,22*s,140*s);c.fillRect(42*s,-140*s,22*s,140*s);c.fillRect(-64*s,-140*s,128*s,34*s);c.fillStyle="#d7a43c";c.fillRect(-41*s,-107*s,82*s,16*s)}c.restore()});
-  relicList.forEach(r=>{if(r.taken)return;const p=project(r.lane,r.z),s=p.s,bob=Math.sin(performance.now()*.006+r.z)*6*s;c.save();c.translate(p.x,p.y-62*s+bob);c.rotate(performance.now()*.0018);c.shadowColor="#f4bc49";c.shadowBlur=28*s;c.fillStyle="#ffce5e";c.beginPath();c.moveTo(0,-18*s);c.lineTo(15*s,0);c.lineTo(0,18*s);c.lineTo(-15*s,0);c.closePath();c.fill();c.strokeStyle="#fff0b4";c.lineWidth=2*s;c.stroke();c.restore()});
+  relicList.forEach(r=>{if(r.taken)return;const p=project(r.lane,r.z),s=p.s,bob=Math.sin(visualTime*6+r.z)*6*s;c.save();c.translate(p.x,p.y-62*s+bob);c.rotate(visualTime*1.8);c.shadowColor="#f4bc49";c.shadowBlur=28*s;c.fillStyle="#ffce5e";c.beginPath();c.moveTo(0,-18*s);c.lineTo(15*s,0);c.lineTo(0,18*s);c.lineTo(-15*s,0);c.closePath();c.fill();c.strokeStyle="#fff0b4";c.lineWidth=2*s;c.stroke();c.restore()});
   drawFallbackRunner(c,w,h,run);
   sparks.forEach(s=>{const p=project(s.mesh.position.x/2.25,s.mesh.position.z);c.globalAlpha=Math.max(0,s.life);c.fillStyle="#ffd66e";c.beginPath();c.arc(p.x,p.y-s.mesh.position.y*18,3,0,Math.PI*2);c.fill()});c.globalAlpha=1;
 }
 function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running:boolean){
   const mobile=w<760,baseX=state==="ready"?(mobile?w*.5:w*.72):w/2+runner.position.x*w*.1,baseY=state==="ready"?(mobile?h*.63:h*.82):h*.84-jumpY*h*.13;
-  const s=Math.max(.72,Math.min(1.25,w/1100))*(mobile?.78:1),t=performance.now()*.009,slidePose=slide>0;
+  const s=Math.max(.72,Math.min(1.25,w/1100))*(mobile?.78:1),t=visualTime*9,slidePose=slide>0;
   c.save();c.translate(baseX,baseY);c.scale(s,s);c.rotate(runner.rotation.z);c.fillStyle="rgba(0,0,0,.42)";c.beginPath();c.ellipse(0,jumpY*35,38*(1-jumpY*.12),11*(1-jumpY*.12),0,0,Math.PI*2);c.fill();
   c.translate(0,slidePose?16:0);c.rotate(slidePose?-.55:0);
   const swing=running?Math.sin(t)*19:0;c.lineCap="round";
@@ -296,9 +340,9 @@ function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running
 }
 function render(now:number){const dt=(now-last)/1000;last=now;update(dt);if(renderer)renderer.render(scene,camera);else drawFallback();requestAnimationFrame(render)}
 function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.setSize(r.width,r.height,false);else{canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}camera.aspect=r.width/r.height;camera.fov=r.width/r.height<.8?64:51;camera.updateProjectionMatrix()}
-function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:dailyChallenge?"daily":"free");if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
+function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Escape"].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:dailyChallenge?"daily":"free");if(e.repeat)return;if(e.key.toLowerCase()==="p"||e.key==="Escape"){state==="paused"?resumeRun():pauseRun();return}if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
-$("#start-button").addEventListener("click",()=>start(dailyChallenge?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+$("#start-button").addEventListener("click",()=>start(dailyChallenge?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));pauseButton.addEventListener("click",()=>state==="paused"?resumeRun():pauseRun());resumeButton.addEventListener("click",resumeRun);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 shareButton.addEventListener("click",async()=>{
   shareButton.disabled=true;shareStatus.textContent="Opening share…";
   const result=await shareRunResult(Math.floor(distance),activeMode==="daily"?dailyKey:undefined);
@@ -310,5 +354,5 @@ shareButton.addEventListener("click",async()=>{
   shareButton.disabled=false;
 });
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
-addEventListener("keydown",key);addEventListener("resize",resize);addEventListener("focus",refreshDailyIntro);document.addEventListener("visibilitychange",()=>{last=performance.now();if(!document.hidden)refreshDailyIntro()});
-refreshDailyIntro();resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
+addEventListener("keydown",key);addEventListener("resize",resize);addEventListener("focus",refreshDailyIntro);document.addEventListener("visibilitychange",()=>{last=performance.now();if(document.hidden)pauseRun(true);else refreshDailyIntro()});
+setState("ready");refreshDailyIntro();resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
