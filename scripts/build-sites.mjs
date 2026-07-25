@@ -6,9 +6,13 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
 const indexPath = resolve(dist, "index.html");
 const socialImagePath = resolve(dist, "wildvault-social-preview.png");
+const robotsPath = resolve(dist, "robots.txt");
+const sitemapPath = resolve(dist, "sitemap.xml");
 
 let html = await readFile(indexPath, "utf8");
 const socialImageBase64 = (await readFile(socialImagePath)).toString("base64");
+const robots = await readFile(robotsPath, "utf8");
+const sitemap = await readFile(sitemapPath, "utf8");
 
 const stylesheet = html.match(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/);
 if (stylesheet) {
@@ -33,7 +37,7 @@ const workerPath = resolve(dist, "server", "index.js");
 await mkdir(dirname(workerPath), { recursive: true });
 await writeFile(
   workerPath,
-  `const html = ${JSON.stringify(html)};\nconst socialImage = Uint8Array.from(atob(${JSON.stringify(socialImageBase64)}), (character) => character.charCodeAt(0));\n\nexport default {\n  async fetch(request) {\n    const url = new URL(request.url);\n    if (url.pathname === "/wildvault-social-preview.png") {\n      return new Response(socialImage, {\n        headers: {\n          "content-type": "image/png",\n          "content-length": String(socialImage.byteLength),\n          "cache-control": "public, max-age=604800, immutable",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname !== "/" && url.pathname !== "/index.html") {\n      return new Response("Not found", { status: 404 });\n    }\n    return new Response(html, {\n      headers: {\n        "content-type": "text/html; charset=utf-8",\n        "cache-control": "no-store, max-age=0",\n        "x-content-type-options": "nosniff",\n        "referrer-policy": "strict-origin-when-cross-origin",\n      },\n    });\n  },\n};\n`,
+  `const html = ${JSON.stringify(html)};\nconst robots = ${JSON.stringify(robots)};\nconst sitemap = ${JSON.stringify(sitemap)};\nconst socialImage = Uint8Array.from(atob(${JSON.stringify(socialImageBase64)}), (character) => character.charCodeAt(0));\n\nexport default {\n  async fetch(request) {\n    const url = new URL(request.url);\n    if (url.pathname === "/wildvault-social-preview.png") {\n      return new Response(socialImage, {\n        headers: {\n          "content-type": "image/png",\n          "content-length": String(socialImage.byteLength),\n          "cache-control": "public, max-age=604800, immutable",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/robots.txt") {\n      return new Response(robots, {\n        headers: {\n          "content-type": "text/plain; charset=utf-8",\n          "cache-control": "public, max-age=3600",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/sitemap.xml") {\n      return new Response(sitemap, {\n        headers: {\n          "content-type": "application/xml; charset=utf-8",\n          "cache-control": "public, max-age=3600",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname !== "/" && url.pathname !== "/index.html") {\n      return new Response("Not found", { status: 404 });\n    }\n    return new Response(html, {\n      headers: {\n        "content-type": "text/html; charset=utf-8",\n        "cache-control": "no-store, max-age=0",\n        "x-content-type-options": "nosniff",\n        "referrer-policy": "strict-origin-when-cross-origin",\n      },\n    });\n  },\n};\n`,
 );
 
 await mkdir(resolve(dist, ".openai"), { recursive: true });
