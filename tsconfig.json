@@ -4,7 +4,6 @@
     "useDefineForClassFields": true,
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "jsx": "react-jsx",
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,
@@ -13,5 +12,5 @@
     "noEmit": true,
     "strict": true
   },
-  "include": ["app", "src"]
+  "include": ["src"]
 }
