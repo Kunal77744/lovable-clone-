@@ -9,6 +9,7 @@
     "preview": "vite preview --host 0.0.0.0",
     "check": "tsc --noEmit",
     "check:feedback": "node scripts/check-difficulty-feedback.mjs",
+    "check:reset": "node scripts/check-daily-reset.mjs",
     "check:pwa": "npm run build && node scripts/check-pwa.mjs",
     "check:press-kit": "npm run build && node scripts/check-press-kit.mjs",
     "check:streak": "node scripts/check-daily-streak.mjs",

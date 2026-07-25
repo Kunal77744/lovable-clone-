@@ -78,7 +78,10 @@
           <button id="start-button" class="primary-button" type="button"><span id="start-button-copy">Enter the vault</span><b>→</b></button>
           <button id="daily-button" class="daily-run-entry" type="button">
             <span>Daily route</span>
-            <strong id="daily-date">Today · UTC</strong>
+            <strong class="daily-route-timing">
+              <b id="daily-date">Today · UTC</b>
+              <small id="daily-reset">Next route in 0h 0m</small>
+            </strong>
             <small class="daily-entry-best">Best <b id="daily-start-best">0</b>m</small>
             <small id="daily-start-streak" class="daily-streak">Start streak</small>
           </button>
@@ -126,8 +129,9 @@
             <div>
               <span id="daily-result-date">Daily route</span>
               <strong id="daily-result-copy">Today's best 0m</strong>
+              <small id="daily-result-reset" class="daily-reset">Next route in 0h 0m</small>
             </div>
-            <small id="daily-result-streak" class="daily-streak">◆ Streak started · return tomorrow</small>
+            <small id="daily-result-streak" class="daily-streak">◆ Streak started</small>
           </div>
           <div class="results">
             <div><span>Sunshards</span><strong id="final-relics">0</strong></div>

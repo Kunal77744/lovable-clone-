@@ -2,6 +2,7 @@ import * as THREE from "three";
 import "./style.css";
 import { captureFirstValue, captureGameOpened, captureRunDifficultyFeedback, captureRunEnded, captureRunResultShared, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
+import { getDailyResetRefreshDelay, getDailyResetView } from "./daily-reset";
 import { completeDailyStreak, readDailyStreak, visibleDailyStreak } from "./daily-streak";
 import { markDifficultyFeedbackShown, shouldShowDifficultyFeedback, type DifficultyAnswer } from "./difficulty-feedback";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
@@ -27,8 +28,8 @@ const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-
 const controlsCopy=$("#controls-copy");
 const challengeStart=$("#challenge-start"),challengeLabel=$("#challenge-label"),challengeTargetEl=$("#challenge-target");
 const challengeResult=$("#challenge-result"),challengeResultCopy=$("#challenge-result-copy");
-const dailyButton=$("#daily-button") as HTMLButtonElement,dailyDateEl=$("#daily-date"),dailyStartBestEl=$("#daily-start-best");
-const dailyStartStreak=$("#daily-start-streak"),dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),dailyResultStreak=$("#daily-result-streak"),missionLabel=$("#mission-label");
+const dailyButton=$("#daily-button") as HTMLButtonElement,dailyDateEl=$("#daily-date"),dailyResetEl=$("#daily-reset"),dailyStartBestEl=$("#daily-start-best");
+const dailyStartStreak=$("#daily-start-streak"),dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),dailyResultReset=$("#daily-result-reset"),dailyResultStreak=$("#daily-result-streak"),missionLabel=$("#mission-label");
 const startButtonCopy=$("#start-button-copy");
 const pausePanel=$("#pause-panel"),pauseCopy=$("#pause-copy"),pauseDistance=$("#pause-distance"),pauseHint=$("#pause-hint");
 const pauseButton=$("#pause-button") as HTMLButtonElement,resumeButton=$("#resume-button") as HTMLButtonElement;
@@ -40,15 +41,25 @@ const coarsePointer=matchMedia("(pointer: coarse)");
 const challengeTarget=readChallengeDistance(location.search);
 const dailyChallenge=readDailyChallenge(location.search);
 
-if(challengeTarget!==null){
+function liveDailyChallenge(now=new Date()){
+  return dailyChallenge?.date===getUtcDateKey(now)?dailyChallenge:null;
+}
+function refreshChallengeIntro(now=new Date()){
+  if(challengeTarget===null)return;
   challengeStart.hidden=false;
   challengeTargetEl.textContent=String(challengeTarget);
-  if(dailyChallenge){
-    challengeLabel.textContent=`Daily ${formatDailyDate(dailyChallenge.date)} · UTC`;
+  const liveDaily=liveDailyChallenge(now);
+  if(liveDaily){
+    challengeLabel.textContent=`Daily ${formatDailyDate(liveDaily.date)} · UTC`;
     startButtonCopy.textContent="Run this daily route";
     dailyButton.hidden=true;
+  }else{
+    challengeLabel.textContent="Run challenge";
+    startButtonCopy.textContent="Enter the vault";
+    dailyButton.hidden=false;
   }
 }
+refreshChallengeIntro();
 
 function setControlGuide(input:"keyboard"|"touch"){
   controlsCopy.dataset.input=input;
@@ -168,16 +179,19 @@ function makeHazard(kind:HazardKind){
 
 let state:State="ready",activeMode:RunMode="free",activeRunNumber=0,lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),visualTime=0,toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
 let countdownTimer:number|undefined;
+let dailyResetTimer:number|undefined;
 let personalBest=readPersonalBest();
 let runBestDistance=0;
 let dailyKey=dailyChallenge?.date??getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
 let dailyStreak=readDailyStreak();
+let lastResultDailyKey:string|undefined;
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
 const lanes=[-2.25,0,2.25];
 
-function refreshDailyIntro(){
-  const currentKey=getUtcDateKey();
-  if(currentKey!==dailyKey){dailyKey=currentKey;dailyRandom=createDailyRandom(dailyKey)}
+function refreshDailyIntro(now=new Date()){
+  const currentKey=getUtcDateKey(now);
+  const runIsActive=state==="countdown"||state==="running"||state==="paused";
+  if(currentKey!==dailyKey&&!runIsActive){dailyKey=currentKey;dailyRandom=createDailyRandom(dailyKey)}
   dailyBest=readDailyBest(dailyKey);
   dailyStreak=readDailyStreak();
   dailyDateEl.textContent=`${formatDailyDate(dailyKey)} · UTC`;
@@ -185,9 +199,18 @@ function refreshDailyIntro(){
   const streakCount=visibleDailyStreak(dailyKey,dailyStreak);
   dailyStartStreak.textContent=streakCount>0?`◆ ${streakCount} day${streakCount===1?"":"s"} streak`:"Start streak";
 }
+function refreshDailyReset(now=new Date()){
+  const resetView=getDailyResetView(now);
+  dailyResetEl.textContent=resetView.copy;
+  dailyResultReset.textContent=resetView.copy;
+  refreshChallengeIntro(now);
+  refreshDailyIntro(now);
+  if(dailyResetTimer!==undefined)clearTimeout(dailyResetTimer);
+  dailyResetTimer=window.setTimeout(()=>refreshDailyReset(),getDailyResetRefreshDelay(now));
+}
 function reset(){
   hazards.forEach(h=>scene.remove(h.mesh));relicList.forEach(r=>scene.remove(r.mesh));sparks.forEach(s=>scene.remove(s.mesh));hazards.length=relicList.length=sparks.length=0;
-  if(activeMode==="daily"){dailyKey=dailyChallenge?.date??getUtcDateKey();dailyBest=readDailyBest(dailyKey);dailyRandom=createDailyRandom(dailyKey)}
+  if(activeMode==="daily"){dailyKey=liveDailyChallenge()?.date??getUtcDateKey();dailyBest=readDailyBest(dailyKey);dailyRandom=createDailyRandom(dailyKey)}
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
 function clearCountdown(){
@@ -228,7 +251,7 @@ function resumeRun(){
 }
 function start(mode:RunMode){
   if(state!=="ready"&&state!=="gameover")return;
-  activeMode=mode;personalBest=readPersonalBest();runBestDistance=personalBest.distance;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;difficultyPulse.hidden=true;difficultyThanks.hidden=true;difficultyButtons.forEach(button=>button.disabled=false);shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
+  activeMode=mode;lastResultDailyKey=undefined;personalBest=readPersonalBest();runBestDistance=personalBest.distance;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;difficultyPulse.hidden=true;difficultyThanks.hidden=true;difficultyButtons.forEach(button=>button.disabled=false);shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
 }
 function gameOver(){
   const runDistance=Math.floor(distance),previousBest=personalBest;
@@ -247,6 +270,7 @@ function gameOver(){
     challengeResult.hidden=false;
   }
   if(activeMode==="daily"){
+    lastResultDailyKey=dailyKey;
     const previousDaily=dailyBest;
     dailyBest=saveDailyBest(dailyKey,{distance:runDistance,relics});
     dailyStreak=completeDailyStreak(dailyKey);
@@ -254,8 +278,8 @@ function gameOver(){
     const dailyRecord=runDistance>previousDaily.distance;
     dailyResultDate.textContent=`Daily ${formatDailyDate(dailyKey)} · UTC`;
     dailyResultCopy.textContent=dailyRecord?`New daily best · ${dailyBest.distance}m`:`Today's best · ${dailyBest.distance}m`;
-    dailyResultStreak.textContent=streakCount===1?"◆ Streak started · return tomorrow":`◆ ${streakCount}-day streak · return tomorrow`;
-    dailyResult.classList.toggle("is-record",dailyRecord);dailyResult.hidden=false;refreshDailyIntro();
+    dailyResultStreak.textContent=streakCount===1?"◆ Streak started":`◆ ${streakCount}-day streak`;
+    dailyResult.classList.toggle("is-record",dailyRecord);dailyResult.hidden=false;refreshDailyReset();
   }
   if(shouldShowDifficultyFeedback(activeRunNumber)){
     markDifficultyFeedbackShown();
@@ -368,9 +392,10 @@ function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running
 }
 function render(now:number){const dt=(now-last)/1000;last=now;update(dt);if(renderer)renderer.render(scene,camera);else drawFallback();requestAnimationFrame(render)}
 function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.setSize(r.width,r.height,false);else{canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}camera.aspect=r.width/r.height;camera.fov=r.width/r.height<.8?64:51;camera.updateProjectionMatrix()}
-function key(e:KeyboardEvent){setControlGuide("keyboard");if(e.target instanceof HTMLElement&&e.target.closest("button"))return;if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Escape"].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:dailyChallenge?"daily":"free");if(e.repeat)return;if(e.key.toLowerCase()==="p"||e.key==="Escape"){state==="paused"?resumeRun():pauseRun();return}if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
+function retryMode(){return dailyChallenge&&!liveDailyChallenge()?"free":activeMode}
+function key(e:KeyboardEvent){setControlGuide("keyboard");if(e.target instanceof HTMLElement&&e.target.closest("button"))return;if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Escape"].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?retryMode():liveDailyChallenge()?"daily":"free");if(e.repeat)return;if(e.key.toLowerCase()==="p"||e.key==="Escape"){state==="paused"?resumeRun():pauseRun();return}if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
-$("#start-button").addEventListener("click",()=>start(dailyChallenge?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));pauseButton.addEventListener("click",()=>state==="paused"?resumeRun():pauseRun());resumeButton.addEventListener("click",resumeRun);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+$("#start-button").addEventListener("click",()=>start(liveDailyChallenge()?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(retryMode()));pauseButton.addEventListener("click",()=>state==="paused"?resumeRun():pauseRun());resumeButton.addEventListener("click",resumeRun);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 difficultyButtons.forEach(button=>button.addEventListener("click",()=>{
   const answer=button.dataset.difficulty as DifficultyAnswer;
   if(!captureRunDifficultyFeedback(renderer?"webgl":"canvas",activeRunNumber,activeMode,distance,answer))return;
@@ -379,7 +404,7 @@ difficultyButtons.forEach(button=>button.addEventListener("click",()=>{
 }));
 shareButton.addEventListener("click",async()=>{
   shareButton.disabled=true;shareStatus.textContent="Opening share…";
-  const result=await shareRunResult(Math.floor(distance),activeMode==="daily"?dailyKey:undefined);
+  const result=await shareRunResult(Math.floor(distance),activeMode==="daily"?lastResultDailyKey:undefined);
   shareStatus.textContent=result.message;
   shareStatus.dataset.state=result.outcome;
   if(result.outcome==="shared"||result.outcome==="copied"){
@@ -388,6 +413,6 @@ shareButton.addEventListener("click",async()=>{
   shareButton.disabled=false;
 });
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
-addEventListener("keydown",key);addEventListener("resize",resize);addEventListener("focus",refreshDailyIntro);document.addEventListener("visibilitychange",()=>{last=performance.now();if(document.hidden)pauseRun(true);else refreshDailyIntro()});
-setState("ready");refreshDailyIntro();resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
+addEventListener("keydown",key);addEventListener("resize",resize);addEventListener("focus",()=>refreshDailyReset());document.addEventListener("visibilitychange",()=>{last=performance.now();if(document.hidden)pauseRun(true);else refreshDailyReset()});
+setState("ready");refreshDailyReset();resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
 setupPwa(installButton);
