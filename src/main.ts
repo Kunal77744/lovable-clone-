@@ -2,6 +2,7 @@ import * as THREE from "three";
 import "./style.css";
 import { captureFirstValue, captureGameOpened } from "./analytics";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
+import { shareRunResult } from "./share-result";
 
 type State = "ready"|"countdown"|"running"|"gameover";
 type HazardKind = "crate"|"arch"|"spikes";
@@ -15,6 +16,7 @@ const startPanel=$("#start-panel"),gameOverPanel=$("#game-over-panel"),countdown
 const distanceEl=$("#distance"),relicEl=$("#relics"),multiplierEl=$("#multiplier"),toast=$("#toast");
 const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLines=$("#speed-lines");
 const bestDistanceEl=$("#best-distance"),bestRelicsEl=$("#best-relics"),recordStatusEl=$("#record-status");
+const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-status");
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07100d);
@@ -128,7 +130,7 @@ function reset(){
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
 function start(){
-  ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
+  ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;shareStatus.textContent="";shareButton.disabled=false;mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
   const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
 }
 function gameOver(){
@@ -237,6 +239,13 @@ function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.se
 function key(e:KeyboardEvent){if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start();if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
 $("#start-button").addEventListener("click",start);$("#restart-button").addEventListener("click",start);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+shareButton.addEventListener("click",async()=>{
+  shareButton.disabled=true;shareStatus.textContent="Opening share…";
+  const result=await shareRunResult(Math.floor(distance));
+  shareStatus.textContent=result.message;
+  shareStatus.dataset.state=result.outcome;
+  shareButton.disabled=false;
+});
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
 addEventListener("keydown",key);addEventListener("resize",resize);document.addEventListener("visibilitychange",()=>last=performance.now());
 resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
