@@ -1,4 +1,9 @@
 import posthog from "posthog-js";
+import {
+  claimDifficultyFeedback,
+  getDistanceBand,
+  type DifficultyAnswer,
+} from "./difficulty-feedback";
 
 const POSTHOG_KEY = "phc_vVVWKup2SjPFSxEuwJBxJB3HYPPkbTiMvSU2SrGf9rsw";
 const POSTHOG_HOST = "https://us.i.posthog.com";
@@ -7,6 +12,7 @@ const RUN_NUMBER_KEY = `${SESSION_PREFIX}run_number`;
 const sentThisPage = new Set<string>();
 const sharedRunNumbers = new Set<number>();
 const endedRunNumbers = new Set<number>();
+const feedbackRunNumbers = new Set<number>();
 let runNumberFallback = 0;
 
 type RenderingMode = "webgl" | "canvas";
@@ -154,6 +160,27 @@ export function captureRunEnded(
     device_type: deviceType(),
     rendering_mode: renderingMode,
   });
+}
+
+export function captureRunDifficultyFeedback(
+  renderingMode: RenderingMode,
+  runNumber: number,
+  runMode: RunMode,
+  distance: number,
+  answer: DifficultyAnswer,
+) {
+  if (feedbackRunNumbers.has(runNumber) || !claimDifficultyFeedback()) return false;
+  feedbackRunNumbers.add(runNumber);
+
+  posthog.capture("run_difficulty_feedback", {
+    answer,
+    run_number: runNumber,
+    run_mode: runMode,
+    distance_band: getDistanceBand(distance),
+    device_type: deviceType(),
+    rendering_mode: renderingMode,
+  });
+  return true;
 }
 
 export function captureFirstValue(

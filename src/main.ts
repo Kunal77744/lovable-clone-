@@ -1,8 +1,9 @@
 import * as THREE from "three";
 import "./style.css";
-import { captureFirstValue, captureGameOpened, captureRunEnded, captureRunResultShared, captureRunStarted } from "./analytics";
+import { captureFirstValue, captureGameOpened, captureRunDifficultyFeedback, captureRunEnded, captureRunResultShared, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { completeDailyStreak, readDailyStreak, visibleDailyStreak } from "./daily-streak";
+import { markDifficultyFeedbackShown, shouldShowDifficultyFeedback, type DifficultyAnswer } from "./difficulty-feedback";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
 import { setupPwa } from "./pwa";
 import { readChallengeDistance, readDailyChallenge, shareRunResult } from "./share-result";
@@ -32,6 +33,8 @@ const startButtonCopy=$("#start-button-copy");
 const pausePanel=$("#pause-panel"),pauseCopy=$("#pause-copy"),pauseDistance=$("#pause-distance"),pauseHint=$("#pause-hint");
 const pauseButton=$("#pause-button") as HTMLButtonElement,resumeButton=$("#resume-button") as HTMLButtonElement;
 const installButton=$("#install-button") as HTMLButtonElement;
+const difficultyPulse=$("#difficulty-pulse"),difficultyThanks=$("#difficulty-thanks");
+const difficultyButtons=[...document.querySelectorAll<HTMLButtonElement>("[data-difficulty]")];
 const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
 const coarsePointer=matchMedia("(pointer: coarse)");
 const challengeTarget=readChallengeDistance(location.search);
@@ -225,7 +228,7 @@ function resumeRun(){
 }
 function start(mode:RunMode){
   if(state!=="ready"&&state!=="gameover")return;
-  activeMode=mode;personalBest=readPersonalBest();runBestDistance=personalBest.distance;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
+  activeMode=mode;personalBest=readPersonalBest();runBestDistance=personalBest.distance;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;difficultyPulse.hidden=true;difficultyThanks.hidden=true;difficultyButtons.forEach(button=>button.disabled=false);shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
 }
 function gameOver(){
   const runDistance=Math.floor(distance),previousBest=personalBest;
@@ -253,6 +256,10 @@ function gameOver(){
     dailyResultCopy.textContent=dailyRecord?`New daily best · ${dailyBest.distance}m`:`Today's best · ${dailyBest.distance}m`;
     dailyResultStreak.textContent=streakCount===1?"◆ Streak started · return tomorrow":`◆ ${streakCount}-day streak · return tomorrow`;
     dailyResult.classList.toggle("is-record",dailyRecord);dailyResult.hidden=false;refreshDailyIntro();
+  }
+  if(shouldShowDifficultyFeedback(activeRunNumber)){
+    markDifficultyFeedbackShown();
+    difficultyPulse.hidden=false;
   }
   setTimeout(()=>gameOverPanel.hidden=false,300);thud();
 }
@@ -361,9 +368,15 @@ function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running
 }
 function render(now:number){const dt=(now-last)/1000;last=now;update(dt);if(renderer)renderer.render(scene,camera);else drawFallback();requestAnimationFrame(render)}
 function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.setSize(r.width,r.height,false);else{canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}camera.aspect=r.width/r.height;camera.fov=r.width/r.height<.8?64:51;camera.updateProjectionMatrix()}
-function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Escape"].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:dailyChallenge?"daily":"free");if(e.repeat)return;if(e.key.toLowerCase()==="p"||e.key==="Escape"){state==="paused"?resumeRun():pauseRun();return}if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
+function key(e:KeyboardEvent){setControlGuide("keyboard");if(e.target instanceof HTMLElement&&e.target.closest("button"))return;if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Escape"].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:dailyChallenge?"daily":"free");if(e.repeat)return;if(e.key.toLowerCase()==="p"||e.key==="Escape"){state==="paused"?resumeRun():pauseRun();return}if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
 $("#start-button").addEventListener("click",()=>start(dailyChallenge?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));pauseButton.addEventListener("click",()=>state==="paused"?resumeRun():pauseRun());resumeButton.addEventListener("click",resumeRun);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+difficultyButtons.forEach(button=>button.addEventListener("click",()=>{
+  const answer=button.dataset.difficulty as DifficultyAnswer;
+  if(!captureRunDifficultyFeedback(renderer?"webgl":"canvas",activeRunNumber,activeMode,distance,answer))return;
+  difficultyButtons.forEach(choice=>choice.disabled=true);
+  difficultyThanks.hidden=false;
+}));
 shareButton.addEventListener("click",async()=>{
   shareButton.disabled=true;shareStatus.textContent="Opening share…";
   const result=await shareRunResult(Math.floor(distance),activeMode==="daily"?dailyKey:undefined);

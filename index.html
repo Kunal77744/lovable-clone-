@@ -140,6 +140,15 @@
               <strong><b id="best-relics">0</b> <small>sunshards</small></strong>
             </div>
           </div>
+          <section id="difficulty-pulse" class="difficulty-pulse" aria-labelledby="difficulty-question" hidden>
+            <strong id="difficulty-question">How did that run feel?</strong>
+            <div role="group" aria-label="Run difficulty">
+              <button type="button" data-difficulty="too_easy">Too easy</button>
+              <button type="button" data-difficulty="just_right">Just right</button>
+              <button type="button" data-difficulty="too_hard">Too hard</button>
+            </div>
+            <small id="difficulty-thanks" aria-live="polite" hidden>Thanks. We'll tune the vault.</small>
+          </section>
           <button id="restart-button" class="primary-button" type="button"><span>Run it back</span><b>↻</b></button>
           <button id="share-button" class="secondary-button" type="button"><span>Share this run</span><b>↗</b></button>
           <p id="share-status" class="share-status" aria-live="polite"></p>
