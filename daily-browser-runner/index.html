@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Play today's Wildvault daily browser runner: one shared UTC-seeded obstacle route, a separate daily best, and a new course at 00:00 UTC. No signup required." />
+    <meta name="theme-color" content="#07100d" />
+    <link rel="canonical" href="https://wildvault-run.account-subscription.chatgpt.site/daily-browser-runner" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%227%22 fill=%22%23081713%22/%3E%3Cpath d=%22M16 5 27 16 16 27 5 16Z%22 fill=%22none%22 stroke=%22%23f2be4d%22 stroke-width=%222%22/%3E%3C/svg%3E" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Wildvault Run" />
+    <meta property="og:title" content="Today's daily browser runner | Wildvault Run" />
+    <meta property="og:description" content="Run the same UTC-seeded obstacle route as every player today. Your daily best stays on this device and a fresh course arrives at 00:00 UTC." />
+    <meta property="og:url" content="https://wildvault-run.account-subscription.chatgpt.site/daily-browser-runner" />
+    <meta property="og:image" content="https://wildvault-run.account-subscription.chatgpt.site/wildvault-social-preview.png" />
+    <meta property="og:image:width" content="1440" />
+    <meta property="og:image:height" content="700" />
+    <meta property="og:image:alt" content="Wildvault Run start screen with an explorer facing a forest causeway." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Today's daily browser runner | Wildvault Run" />
+    <meta name="twitter:description" content="Run one shared UTC-seeded obstacle route today, then return after 00:00 UTC for a fresh course." />
+    <meta name="twitter:image" content="https://wildvault-run.account-subscription.chatgpt.site/wildvault-social-preview.png" />
+    <meta name="twitter:image:alt" content="Wildvault Run start screen with an explorer facing a forest causeway." />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Today's daily browser runner",
+        "url": "https://wildvault-run.account-subscription.chatgpt.site/daily-browser-runner",
+        "description": "Play one shared UTC-seeded Wildvault Run obstacle route each day in a web browser. The course refreshes at 00:00 UTC and requires no signup.",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "Wildvault Run",
+          "url": "https://wildvault-run.account-subscription.chatgpt.site"
+        },
+        "about": {
+          "@type": "VideoGame",
+          "name": "Wildvault Run",
+          "url": "https://wildvault-run.account-subscription.chatgpt.site",
+          "image": "https://wildvault-run.account-subscription.chatgpt.site/wildvault-social-preview.png",
+          "description": "A three-lane browser endless runner where players dodge hazards, collect sunshards, and push for a longer run.",
+          "genre": "Endless runner",
+          "gamePlatform": "Web browser",
+          "playMode": "SinglePlayer",
+          "inLanguage": "en",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      }
+    </script>
+    <title>Daily browser runner challenge | Wildvault Run</title>
+    <style>
+      :root {
+        color: #f4f0df;
+        background: #030604;
+        font-family: "Trebuchet MS", "Avenir Next", system-ui, sans-serif;
+        font-synthesis: none;
+        --gold: #f4bc49;
+        --gold-bright: #ffdb78;
+        --ink: #f4f0df;
+        --muted: #aeb3a7;
+        --forest: #07100d;
+        --forest-raised: #0c1b15;
+        --line: rgba(238, 230, 196, 0.16);
+      }
+      * { box-sizing: border-box; }
+      html { scroll-behavior: smooth; }
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 72% 8%, rgba(244, 188, 73, 0.12), transparent 27rem),
+          radial-gradient(circle at 8% 62%, rgba(52, 97, 64, 0.18), transparent 30rem),
+          linear-gradient(180deg, #07100d 0, #030604 48rem);
+      }
+      a { color: inherit; }
+      img { display: block; max-width: 100%; height: auto; }
+      h1, h2, p, figure { margin: 0; }
+      h1, h2 {
+        font-family: Georgia, "Times New Roman", serif;
+        text-wrap: balance;
+      }
+      p { text-wrap: pretty; }
+      .site-header {
+        width: min(1180px, calc(100% - 48px));
+        min-height: 88px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin: 0 auto;
+      }
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        color: inherit;
+        font: 700 18px Georgia, serif;
+        letter-spacing: 0.03em;
+        text-decoration: none;
+      }
+      .brand-mark {
+        width: 20px;
+        height: 20px;
+        transform: rotate(45deg);
+        border: 1px solid var(--gold);
+        background: rgba(244, 188, 73, 0.08);
+        box-shadow: inset 0 0 0 5px rgba(0, 0, 0, 0.65);
+      }
+      .header-note {
+        color: #7f8880;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      main { overflow: hidden; }
+      .hero {
+        width: min(1180px, calc(100% - 48px));
+        display: grid;
+        grid-template-columns: minmax(0, 0.88fr) minmax(440px, 1.12fr);
+        gap: 68px;
+        align-items: center;
+        margin: 54px auto 0;
+      }
+      .hero-copy { display: grid; gap: 24px; }
+      .eyebrow, .section-label {
+        color: var(--gold-bright);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .eyebrow::before {
+        width: 38px;
+        height: 1px;
+        content: "";
+        background: var(--gold);
+      }
+      h1 {
+        max-width: 9.5ch;
+        font-size: clamp(58px, 7vw, 94px);
+        line-height: 0.94;
+        letter-spacing: -0.055em;
+      }
+      .hero-copy > p {
+        max-width: 49ch;
+        color: #c8cdc0;
+        font-size: clamp(16px, 1.8vw, 19px);
+        line-height: 1.6;
+      }
+      .route-clock {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        align-items: baseline;
+        padding: 16px 0;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        font-variant-numeric: tabular-nums;
+      }
+      .route-clock strong {
+        color: var(--gold-bright);
+        font: 700 20px Georgia, serif;
+      }
+      .route-clock span {
+        color: #899188;
+        font-size: 12px;
+      }
+      .play-today {
+        width: fit-content;
+        min-height: 56px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: 0 20px 0 24px;
+        border: 1px solid #ffe29b;
+        border-radius: 11px;
+        color: #17170f;
+        background: var(--gold);
+        box-shadow: 0 17px 42px rgba(244, 188, 73, 0.22);
+        font-weight: 900;
+        text-decoration: none;
+        transition: transform 160ms ease-out, background 160ms ease-out;
+      }
+      .play-today span {
+        width: 28px;
+        height: 28px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .play-today:hover, .play-today:focus-visible {
+        transform: translateY(-2px);
+        background: #ffd166;
+      }
+      .play-today:active { transform: translateY(1px); }
+      .play-today:focus-visible, .brand:focus-visible, footer a:focus-visible {
+        outline: 3px solid #fff;
+        outline-offset: 3px;
+      }
+      .no-gate { color: #7f8880; font-size: 12px; }
+      .hero-art {
+        position: relative;
+        overflow: hidden;
+        min-height: 590px;
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(238, 230, 196, 0.18);
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at 50% 28%, rgba(244, 188, 73, 0.1), transparent 21rem),
+          var(--forest-raised);
+        box-shadow: 0 34px 110px rgba(0, 0, 0, 0.62);
+      }
+      .hero-art img {
+        width: auto;
+        height: 590px;
+        object-fit: contain;
+      }
+      .hero-art figcaption {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        left: 18px;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 14px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 12px;
+        color: #d7dccf;
+        background: rgba(4, 10, 7, 0.82);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .play-surface {
+        width: min(1340px, calc(100% - 32px));
+        position: relative;
+        margin: 96px auto 0;
+        padding: 12px;
+        border: 1px solid rgba(180, 202, 179, 0.2);
+        border-radius: 24px;
+        background: rgba(4, 9, 7, 0.72);
+        box-shadow: 0 34px 110px rgba(0, 0, 0, 0.62);
+        scroll-margin-top: 16px;
+      }
+      .play-surface iframe {
+        display: block;
+        width: 100%;
+        height: clamp(640px, 82svh, 900px);
+        border: 0;
+        border-radius: 14px;
+        background: var(--forest);
+      }
+      .play-caption {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 2px 4px 12px;
+        color: #d6d8ce;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .route-notes {
+        width: min(1180px, calc(100% - 48px));
+        display: grid;
+        grid-template-columns: minmax(250px, 0.7fr) minmax(0, 1.3fr);
+        gap: 80px;
+        align-items: start;
+        margin: 136px auto 0;
+        padding: 64px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background:
+          radial-gradient(circle at 82% 8%, rgba(244, 188, 73, 0.09), transparent 24rem),
+          rgba(12, 27, 21, 0.62);
+      }
+      .route-notes h2 {
+        max-width: 9ch;
+        margin-top: 14px;
+        font-size: clamp(40px, 5vw, 62px);
+        line-height: 0.98;
+        letter-spacing: -0.045em;
+      }
+      .rules { display: grid; gap: 0; }
+      .rule {
+        display: grid;
+        grid-template-columns: 44px 1fr;
+        gap: 18px;
+        padding: 22px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .rule:first-child { padding-top: 0; }
+      .rule:last-child { border-bottom: 0; }
+      .rule > span { color: var(--gold-bright); font-weight: 900; }
+      .rule strong {
+        display: block;
+        margin-bottom: 7px;
+        font: 700 22px Georgia, serif;
+      }
+      .rule p { max-width: 50ch; color: #aeb6aa; line-height: 1.55; }
+      footer {
+        min-height: 88px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        color: #68716b;
+        font-size: 10px;
+      }
+      footer a {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: inherit;
+        text-decoration: none;
+      }
+      footer svg { width: 1em; height: 1em; }
+      @media (max-width: 920px) {
+        .hero { grid-template-columns: 1fr; }
+        .hero-copy { width: min(700px, 100%); }
+        .hero-art { min-height: 540px; }
+        .hero-art img { height: 540px; }
+      }
+      @media (max-width: 760px) {
+        .site-header, .hero, .route-notes { width: min(100% - 32px, 1180px); }
+        .site-header { min-height: 76px; }
+        .brand { font-size: 16px; }
+        .header-note { display: none; }
+        .hero { gap: 40px; margin-top: 42px; }
+        .hero-copy { gap: 19px; }
+        h1 { max-width: 10ch; font-size: clamp(52px, 15.5vw, 76px); }
+        .play-today { min-height: 52px; }
+        .hero-art { min-height: 520px; }
+        .hero-art img { height: 520px; }
+        .hero-art figcaption { right: 12px; bottom: 12px; left: 12px; }
+        .play-surface {
+          width: 100%;
+          margin-top: 72px;
+          padding: 0;
+          border-right: 0;
+          border-left: 0;
+          border-radius: 0;
+          scroll-margin-top: 0;
+        }
+        .play-surface iframe {
+          height: max(680px, 100svh);
+          border-radius: 0;
+        }
+        .play-caption { padding: 12px 16px; }
+        .route-notes {
+          grid-template-columns: 1fr;
+          gap: 44px;
+          margin-top: 96px;
+          padding: 36px 24px;
+        }
+        .route-notes h2 { font-size: 46px; }
+      }
+      @media (max-width: 420px) {
+        .play-today span, .hero-art figcaption span:last-child { display: none; }
+        .rule { grid-template-columns: 32px 1fr; gap: 12px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html { scroll-behavior: auto; }
+        * { transition-duration: 0.01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/" aria-label="Wildvault Run home">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span>Wildvault</span>
+      </a>
+      <span class="header-note">One shared route · resets 00:00 UTC</span>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="daily-title">
+        <div class="hero-copy">
+          <div class="eyebrow">Today's daily browser runner</div>
+          <h1 id="daily-title">One route. One day. Run it clean.</h1>
+          <p>Every player gets the same obstacle sequence today. Learn the causeway, improve your device-local daily best, and come back after the UTC reset for a fresh course.</p>
+          <div class="route-clock" aria-live="polite">
+            <strong id="route-date">Today's route · UTC</strong>
+            <span id="route-reset">Next route in 0h 0m</span>
+          </div>
+          <a class="play-today" href="/?daily=1&amp;utm_source=daily-browser-runner&amp;utm_medium=organic&amp;utm_campaign=todays-route">
+            Play today's route
+            <span aria-hidden="true">→</span>
+          </a>
+          <span class="no-gate">Free to play. No account or download required.</span>
+        </div>
+        <figure class="hero-art">
+          <img src="/wildvault-mobile-gameplay.png" width="390" height="844" alt="Wildvault Run on a mobile screen with the explorer facing the forest causeway." />
+          <figcaption>
+            <span>Same course for every player today</span>
+            <span>Keys or touch</span>
+          </figcaption>
+        </figure>
+      </section>
+
+      <section class="play-surface" id="play" aria-label="Play today's Wildvault daily route">
+        <div class="play-caption">
+          <span>Today's route · playable here</span>
+          <span id="play-date">UTC</span>
+        </div>
+        <iframe
+          id="game-player"
+          src="/?embed=1&amp;daily=1&amp;utm_source=daily-browser-runner&amp;utm_medium=organic&amp;utm_campaign=inline-daily"
+          title="Play today's Wildvault daily route"
+          tabindex="0"
+          loading="eager"
+          allow="fullscreen"
+        ></iframe>
+      </section>
+
+      <section class="route-notes" aria-labelledby="route-notes-title">
+        <div>
+          <div class="section-label">How the daily run works</div>
+          <h2 id="route-notes-title">A fair route, fresh at UTC.</h2>
+        </div>
+        <div class="rules">
+          <article class="rule">
+            <span>01</span>
+            <div>
+              <strong>One dated obstacle sequence</strong>
+              <p>The route is seeded by the UTC date, so every player sees the same course that day.</p>
+            </div>
+          </article>
+          <article class="rule">
+            <span>02</span>
+            <div>
+              <strong>A separate daily best</strong>
+              <p>Your best distance and sunshards for today's course stay on this device, separate from free-run records.</p>
+            </div>
+          </article>
+          <article class="rule">
+            <span>03</span>
+            <div>
+              <strong>A fresh course at 00:00 UTC</strong>
+              <p>The visible countdown rolls into the next dated route without making you reload this page.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span>© 2026 Wildvault</span>
+      <span>•</span>
+      <a href="/free-browser-runner">Free runner</a>
+      <span>•</span>
+      <a href="/press-kit">Player press kit</a>
+      <span>•</span>
+      <a href="https://tin.computer" target="_blank" rel="noreferrer">
+        <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#66DC9D" /></svg>
+        Growth by Tin
+      </a>
+    </footer>
+    <script>
+      const routeDate = document.querySelector("#route-date");
+      const routeReset = document.querySelector("#route-reset");
+      const playDate = document.querySelector("#play-date");
+      const playLink = document.querySelector(".play-today");
+      const playSurface = document.querySelector("#play");
+      const gamePlayer = document.querySelector("#game-player");
+      let routeTimer;
+
+      function getDailyPageView(now = new Date()) {
+        const timestamp = now.getTime();
+        const boundary = Date.UTC(
+          now.getUTCFullYear(),
+          now.getUTCMonth(),
+          now.getUTCDate() + 1,
+        );
+        const remainingMinutes = Math.ceil(Math.max(0, boundary - timestamp) / 60000);
+        const hours = Math.floor(remainingMinutes / 60);
+        const minutes = remainingMinutes % 60;
+        const dateCopy = new Intl.DateTimeFormat("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          timeZone: "UTC",
+        }).format(now);
+        return {
+          dateCopy,
+          resetCopy: `Next route in ${hours}h ${minutes}m`,
+          refreshDelay: Math.max(
+            50,
+            Math.min(60000 - (timestamp % 60000), boundary - timestamp) + 25,
+          ),
+        };
+      }
+
+      function renderDailyPage(now = new Date()) {
+        const view = getDailyPageView(now);
+        routeDate.textContent = `${view.dateCopy} · UTC`;
+        routeReset.textContent = view.resetCopy;
+        playDate.textContent = `${view.dateCopy} · UTC`;
+        window.clearTimeout(routeTimer);
+        routeTimer = window.setTimeout(renderDailyPage, view.refreshDelay);
+      }
+
+      function focusDailyGame() {
+        gamePlayer.focus({ preventScroll: true });
+        try {
+          gamePlayer.contentWindow.focus();
+          gamePlayer.contentDocument
+            ?.querySelector("#start-button")
+            ?.focus({ preventScroll: true });
+        } catch {}
+      }
+
+      playLink.addEventListener("click", (event) => {
+        event.preventDefault();
+        playSurface.scrollIntoView({
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+          block: "start",
+        });
+        window.setTimeout(focusDailyGame, 500);
+      });
+
+      renderDailyPage();
+    </script>
+  </body>
+</html>

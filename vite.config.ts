@@ -9,6 +9,7 @@ export default defineConfig({
         game: resolve(__dirname, "index.html"),
         pressKit: resolve(__dirname, "press-kit/index.html"),
         freeBrowserRunner: resolve(__dirname, "free-browser-runner/index.html"),
+        dailyBrowserRunner: resolve(__dirname, "daily-browser-runner/index.html"),
       },
     },
   },

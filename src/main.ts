@@ -17,8 +17,11 @@ interface Relic{mesh:THREE.Group;lane:number;z:number;taken:boolean}
 interface Spark{mesh:THREE.Mesh;velocity:THREE.Vector3;life:number}
 
 const $=<T extends HTMLElement>(s:string)=>document.querySelector<T>(s)!;
-const embedValues=new URLSearchParams(location.search).getAll("embed");
+const routeParams=new URLSearchParams(location.search);
+const embedValues=routeParams.getAll("embed");
 const embedMode=embedValues.length===1&&embedValues[0]==="1";
+const dailyEntryValues=routeParams.getAll("daily");
+const dailyEntryMode=dailyEntryValues.length===1&&dailyEntryValues[0]==="1";
 document.documentElement.classList.toggle("embed-mode",embedMode);
 const canvas=$("#game") as HTMLCanvasElement;
 const gameFrame=$(".game-frame");
@@ -49,17 +52,23 @@ function liveDailyChallenge(now=new Date()){
   return dailyChallenge?.date===getUtcDateKey(now)?dailyChallenge:null;
 }
 function refreshChallengeIntro(now=new Date()){
-  if(challengeTarget===null)return;
-  challengeStart.hidden=false;
-  challengeTargetEl.textContent=String(challengeTarget);
   const liveDaily=liveDailyChallenge(now);
+  if(challengeTarget!==null){
+    challengeStart.hidden=false;
+    challengeTargetEl.textContent=String(challengeTarget);
+  }
   if(liveDaily){
     challengeLabel.textContent=`Daily ${formatDailyDate(liveDaily.date)} · UTC`;
     startButtonCopy.textContent="Run this daily route";
     dailyButton.hidden=true;
-  }else{
+  }else if(dailyEntryMode){
+    startButtonCopy.textContent="Run today's route";
+    dailyButton.hidden=true;
+  }else if(challengeTarget!==null){
     challengeLabel.textContent="Run challenge";
     startButtonCopy.textContent="Enter the vault";
+    dailyButton.hidden=false;
+  }else{
     dailyButton.hidden=false;
   }
 }
@@ -399,7 +408,7 @@ function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.se
 function retryMode(){return dailyChallenge&&!liveDailyChallenge()?"free":activeMode}
 function key(e:KeyboardEvent){setControlGuide("keyboard");if(e.target instanceof HTMLElement&&e.target.closest("button"))return;if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," ","Escape"].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?retryMode():liveDailyChallenge()?"daily":"free");if(e.repeat)return;if(e.key.toLowerCase()==="p"||e.key==="Escape"){state==="paused"?resumeRun():pauseRun();return}if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
-$("#start-button").addEventListener("click",()=>start(liveDailyChallenge()?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(retryMode()));pauseButton.addEventListener("click",()=>state==="paused"?resumeRun():pauseRun());resumeButton.addEventListener("click",resumeRun);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+$("#start-button").addEventListener("click",()=>start(liveDailyChallenge()||dailyEntryMode?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(retryMode()));pauseButton.addEventListener("click",()=>state==="paused"?resumeRun():pauseRun());resumeButton.addEventListener("click",resumeRun);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 difficultyButtons.forEach(button=>button.addEventListener("click",()=>{
   const answer=button.dataset.difficulty as DifficultyAnswer;
   if(!captureRunDifficultyFeedback(renderer?"webgl":"canvas",activeRunNumber,activeMode,distance,answer))return;

@@ -13,6 +13,7 @@
     "check:pwa": "npm run build && node scripts/check-pwa.mjs",
     "check:press-kit": "npm run build && node scripts/check-press-kit.mjs",
     "check:runner-page": "npm run build && node scripts/check-free-browser-runner.mjs",
+    "check:daily-page": "npm run build && node scripts/check-daily-browser-runner.mjs && node scripts/check-daily-reset.mjs",
     "check:streak": "node scripts/check-daily-streak.mjs",
     "check:previews": "npm run build && node scripts/check-social-previews.mjs"
   },
