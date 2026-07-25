@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
 const indexPath = resolve(dist, "index.html");
+const pressKitPath = resolve(dist, "press-kit", "index.html");
 const socialImagePath = resolve(dist, "wildvault-social-preview.png");
+const mobileScreenshotPath = resolve(dist, "wildvault-mobile-gameplay.png");
 const robotsPath = resolve(dist, "robots.txt");
 const sitemapPath = resolve(dist, "sitemap.xml");
 const manifestPath = resolve(dist, "manifest.webmanifest");
@@ -16,7 +18,9 @@ const icon512Path = resolve(dist, "icon-512.png");
 const gameUrl = "https://wildvault-run.account-subscription.chatgpt.site";
 
 let html = await readFile(indexPath, "utf8");
+const pressKitHtml = await readFile(pressKitPath, "utf8");
 const socialImageBase64 = (await readFile(socialImagePath)).toString("base64");
+const mobileScreenshotBase64 = (await readFile(mobileScreenshotPath)).toString("base64");
 const robots = await readFile(robotsPath, "utf8");
 const sitemap = await readFile(sitemapPath, "utf8");
 const manifest = await readFile(manifestPath, "utf8");
@@ -147,7 +151,96 @@ const workerPath = resolve(dist, "server", "index.js");
 await mkdir(dirname(workerPath), { recursive: true });
 await writeFile(
   workerPath,
-  `const html = ${JSON.stringify(html)};\nconst robots = ${JSON.stringify(robots)};\nconst sitemap = ${JSON.stringify(sitemap)};\nconst manifest = ${JSON.stringify(manifest)};\nconst serviceWorker = ${JSON.stringify(serviceWorker)};\nconst socialImage = Uint8Array.from(atob(${JSON.stringify(socialImageBase64)}), (character) => character.charCodeAt(0));\nconst icon192 = Uint8Array.from(atob(${JSON.stringify(icon192Base64)}), (character) => character.charCodeAt(0));\nconst icon512 = Uint8Array.from(atob(${JSON.stringify(icon512Base64)}), (character) => character.charCodeAt(0));\n\nexport default {\n  async fetch(request) {\n    const url = new URL(request.url);\n    if (url.pathname === "/wildvault-social-preview.png") {\n      return new Response(socialImage, {\n        headers: {\n          "content-type": "image/png",\n          "content-length": String(socialImage.byteLength),\n          "cache-control": "public, max-age=604800, immutable",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/icon-192.png" || url.pathname === "/icon-512.png") {\n      const icon = url.pathname === "/icon-192.png" ? icon192 : icon512;\n      return new Response(icon, {\n        headers: {\n          "content-type": "image/png",\n          "content-length": String(icon.byteLength),\n          "cache-control": "public, max-age=86400, must-revalidate",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/manifest.webmanifest") {\n      return new Response(manifest, {\n        headers: {\n          "content-type": "application/manifest+json; charset=utf-8",\n          "cache-control": "public, max-age=3600, must-revalidate",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/sw.js") {\n      return new Response(serviceWorker, {\n        headers: {\n          "content-type": "text/javascript; charset=utf-8",\n          "cache-control": "no-store, max-age=0",\n          "service-worker-allowed": "/",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/robots.txt") {\n      return new Response(robots, {\n        headers: {\n          "content-type": "text/plain; charset=utf-8",\n          "cache-control": "public, max-age=3600",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname === "/sitemap.xml") {\n      return new Response(sitemap, {\n        headers: {\n          "content-type": "application/xml; charset=utf-8",\n          "cache-control": "public, max-age=3600",\n          "x-content-type-options": "nosniff",\n        },\n      });\n    }\n    if (url.pathname !== "/" && url.pathname !== "/index.html") {\n      return new Response("Not found", { status: 404 });\n    }\n    return new Response(html, {\n      headers: {\n        "content-type": "text/html; charset=utf-8",\n        "cache-control": "no-store, max-age=0",\n        "x-content-type-options": "nosniff",\n        "referrer-policy": "strict-origin-when-cross-origin",\n      },\n    });\n  },\n};\n`,
+  `const html = ${JSON.stringify(html)};
+const pressKitHtml = ${JSON.stringify(pressKitHtml)};
+const robots = ${JSON.stringify(robots)};
+const sitemap = ${JSON.stringify(sitemap)};
+const manifest = ${JSON.stringify(manifest)};
+const serviceWorker = ${JSON.stringify(serviceWorker)};
+const socialImage = Uint8Array.from(atob(${JSON.stringify(socialImageBase64)}), (character) => character.charCodeAt(0));
+const mobileScreenshot = Uint8Array.from(atob(${JSON.stringify(mobileScreenshotBase64)}), (character) => character.charCodeAt(0));
+const icon192 = Uint8Array.from(atob(${JSON.stringify(icon192Base64)}), (character) => character.charCodeAt(0));
+const icon512 = Uint8Array.from(atob(${JSON.stringify(icon512Base64)}), (character) => character.charCodeAt(0));
+
+const htmlHeaders = {
+  "content-type": "text/html; charset=utf-8",
+  "cache-control": "no-store, max-age=0",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+};
+
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+    if (url.pathname === "/wildvault-social-preview.png" || url.pathname === "/wildvault-mobile-gameplay.png") {
+      const image = url.pathname === "/wildvault-social-preview.png" ? socialImage : mobileScreenshot;
+      return new Response(image, {
+        headers: {
+          "content-type": "image/png",
+          "content-length": String(image.byteLength),
+          "cache-control": "public, max-age=604800, immutable",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/icon-192.png" || url.pathname === "/icon-512.png") {
+      const icon = url.pathname === "/icon-192.png" ? icon192 : icon512;
+      return new Response(icon, {
+        headers: {
+          "content-type": "image/png",
+          "content-length": String(icon.byteLength),
+          "cache-control": "public, max-age=86400, must-revalidate",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/manifest.webmanifest") {
+      return new Response(manifest, {
+        headers: {
+          "content-type": "application/manifest+json; charset=utf-8",
+          "cache-control": "public, max-age=3600, must-revalidate",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/sw.js") {
+      return new Response(serviceWorker, {
+        headers: {
+          "content-type": "text/javascript; charset=utf-8",
+          "cache-control": "no-store, max-age=0",
+          "service-worker-allowed": "/",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/robots.txt") {
+      return new Response(robots, {
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "public, max-age=3600",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/sitemap.xml") {
+      return new Response(sitemap, {
+        headers: {
+          "content-type": "application/xml; charset=utf-8",
+          "cache-control": "public, max-age=3600",
+          "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/press-kit" || url.pathname === "/press-kit/") {
+      return new Response(pressKitHtml, { headers: htmlHeaders });
+    }
+    if (url.pathname !== "/" && url.pathname !== "/index.html") {
+      return new Response("Not found", { status: 404 });
+    }
+    return new Response(html, { headers: htmlHeaders });
+  },
+};
+`,
 );
 
 let worker = await readFile(workerPath, "utf8");
