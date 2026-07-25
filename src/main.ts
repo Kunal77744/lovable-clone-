@@ -1,5 +1,3 @@
-import "./style.css";
-
 type GameState = "ready" | "running" | "gameover";
 type EntityType = "relic" | "block" | "arch" | "thorns";
 
