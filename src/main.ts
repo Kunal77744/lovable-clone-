@@ -17,6 +17,7 @@ const canvas=$("#game") as HTMLCanvasElement;
 const gameFrame=$(".game-frame");
 const startPanel=$("#start-panel"),gameOverPanel=$("#game-over-panel"),countdown=$("#countdown");
 const distanceEl=$("#distance"),relicEl=$("#relics"),multiplierEl=$("#multiplier"),toast=$("#toast");
+const bestPace=$("#best-pace"),bestPaceCopy=$("#best-pace-copy");
 const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLines=$("#speed-lines");
 const bestDistanceEl=$("#best-distance"),bestRelicsEl=$("#best-relics"),recordStatusEl=$("#record-status");
 const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-status");
@@ -162,6 +163,7 @@ function makeHazard(kind:HazardKind){
 let state:State="ready",activeMode:RunMode="free",activeRunNumber=0,lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),visualTime=0,toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
 let countdownTimer:number|undefined;
 let personalBest=readPersonalBest();
+let runBestDistance=0;
 let dailyKey=dailyChallenge?.date??getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
 const lanes=[-2.25,0,2.25];
@@ -216,7 +218,7 @@ function resumeRun(){
 }
 function start(mode:RunMode){
   if(state!=="ready"&&state!=="gameover")return;
-  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
+  activeMode=mode;personalBest=readPersonalBest();runBestDistance=personalBest.distance;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;activeRunNumber=captureRunStarted(renderer?"webgl":"canvas",activeMode,challengeTarget!==null);beginCountdown();
 }
 function gameOver(){
   const runDistance=Math.floor(distance),previousBest=personalBest;
@@ -243,7 +245,15 @@ function gameOver(){
   }
   setTimeout(()=>gameOverPanel.hidden=false,300);thud();
 }
-function updateHud(){distanceEl.textContent=String(Math.floor(distance));relicEl.textContent=String(relics);multiplierEl.textContent=`×${combo}`;chainEl.textContent=`${chain%5} / 5`;progress.style.width=`${(distance%500)/5}%`}
+function updateHud(){
+  const currentDistance=Math.floor(distance);
+  distanceEl.textContent=String(currentDistance);relicEl.textContent=String(relics);multiplierEl.textContent=`×${combo}`;chainEl.textContent=`${chain%5} / 5`;progress.style.width=`${(distance%500)/5}%`;
+  bestPace.hidden=runBestDistance<=0;
+  if(runBestDistance<=0)return;
+  const remaining=runBestDistance-currentDistance;
+  bestPace.classList.toggle("is-record",remaining<0);
+  bestPaceCopy.textContent=remaining>0?`${remaining}m to best`:remaining===0?"Best matched":"New record";
+}
 function pop(msg:string){toast.textContent=msg;toast.classList.add("visible");toastClock=.8}
 function ensureAudio(){if(!audioOn)return;if(!audio)audio=new AudioContext();if(audio.state==="suspended")void audio.resume()}
 function sound(f:number,d:number,type:OscillatorType,v=.06){if(!audioOn)return;ensureAudio();if(!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(f,audio.currentTime);g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}
