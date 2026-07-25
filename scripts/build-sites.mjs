@@ -9,6 +9,7 @@ const indexPath = resolve(dist, "index.html");
 const pressKitPath = resolve(dist, "press-kit", "index.html");
 const socialImagePath = resolve(dist, "wildvault-social-preview.png");
 const mobileScreenshotPath = resolve(dist, "wildvault-mobile-gameplay.png");
+const gameplayClipPath = resolve(dist, "wildvault-gameplay.mp4");
 const robotsPath = resolve(dist, "robots.txt");
 const sitemapPath = resolve(dist, "sitemap.xml");
 const manifestPath = resolve(dist, "manifest.webmanifest");
@@ -21,6 +22,7 @@ let html = await readFile(indexPath, "utf8");
 const pressKitHtml = await readFile(pressKitPath, "utf8");
 const socialImageBase64 = (await readFile(socialImagePath)).toString("base64");
 const mobileScreenshotBase64 = (await readFile(mobileScreenshotPath)).toString("base64");
+const gameplayClipBase64 = (await readFile(gameplayClipPath)).toString("base64");
 const robots = await readFile(robotsPath, "utf8");
 const sitemap = await readFile(sitemapPath, "utf8");
 const manifest = await readFile(manifestPath, "utf8");
@@ -159,6 +161,7 @@ const manifest = ${JSON.stringify(manifest)};
 const serviceWorker = ${JSON.stringify(serviceWorker)};
 const socialImage = Uint8Array.from(atob(${JSON.stringify(socialImageBase64)}), (character) => character.charCodeAt(0));
 const mobileScreenshot = Uint8Array.from(atob(${JSON.stringify(mobileScreenshotBase64)}), (character) => character.charCodeAt(0));
+const gameplayClip = Uint8Array.from(atob(${JSON.stringify(gameplayClipBase64)}), (character) => character.charCodeAt(0));
 const icon192 = Uint8Array.from(atob(${JSON.stringify(icon192Base64)}), (character) => character.charCodeAt(0));
 const icon512 = Uint8Array.from(atob(${JSON.stringify(icon512Base64)}), (character) => character.charCodeAt(0));
 
@@ -180,6 +183,67 @@ export default {
           "content-length": String(image.byteLength),
           "cache-control": "public, max-age=604800, immutable",
           "x-content-type-options": "nosniff",
+        },
+      });
+    }
+    if (url.pathname === "/wildvault-gameplay.mp4") {
+      const range = request.headers.get("range");
+      const headers = {
+        "content-type": "video/mp4",
+        "cache-control": "public, max-age=604800, immutable",
+        "accept-ranges": "bytes",
+        "x-content-type-options": "nosniff",
+      };
+
+      if (range) {
+        const match = /^bytes=(\\d*)-(\\d*)$/.exec(range);
+        if (!match) {
+          return new Response(null, {
+            status: 416,
+            headers: {
+              ...headers,
+              "content-range": "bytes */" + gameplayClip.byteLength,
+            },
+          });
+        }
+
+        const start = match[1] ? Number(match[1]) : 0;
+        const requestedEnd = match[2]
+          ? Number(match[2])
+          : gameplayClip.byteLength - 1;
+        const end = Math.min(requestedEnd, gameplayClip.byteLength - 1);
+        if (
+          !Number.isSafeInteger(start) ||
+          !Number.isSafeInteger(end) ||
+          start < 0 ||
+          end < start ||
+          start >= gameplayClip.byteLength
+        ) {
+          return new Response(null, {
+            status: 416,
+            headers: {
+              ...headers,
+              "content-range": "bytes */" + gameplayClip.byteLength,
+            },
+          });
+        }
+
+        const slice = gameplayClip.slice(start, end + 1);
+        return new Response(slice, {
+          status: 206,
+          headers: {
+            ...headers,
+            "content-length": String(slice.byteLength),
+            "content-range":
+              "bytes " + start + "-" + end + "/" + gameplayClip.byteLength,
+          },
+        });
+      }
+
+      return new Response(gameplayClip, {
+        headers: {
+          ...headers,
+          "content-length": String(gameplayClip.byteLength),
         },
       });
     }

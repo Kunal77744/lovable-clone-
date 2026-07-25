@@ -14,6 +14,8 @@ const sharedRunNumbers = new Set<number>();
 const endedRunNumbers = new Set<number>();
 const feedbackRunNumbers = new Set<number>();
 let runNumberFallback = 0;
+const embedValues = new URLSearchParams(location.search).getAll("embed");
+const embedMode = embedValues.length === 1 && embedValues[0] === "1";
 
 type RenderingMode = "webgl" | "canvas";
 type HazardKind = "crate" | "arch" | "spikes";
@@ -44,6 +46,13 @@ function captureOnce(
   posthog.capture(event, properties);
 }
 
+function surfaceContext() {
+  return {
+    device_type: deviceType(),
+    embed_mode: embedMode ? 1 : 0,
+  };
+}
+
 const testRun = new URLSearchParams(location.search).get("e2e_run");
 
 posthog.init(POSTHOG_KEY, {
@@ -67,7 +76,7 @@ posthog.init(POSTHOG_KEY, {
 
 export function captureGameOpened(renderingMode: RenderingMode) {
   captureOnce("game_opened", "game_opened", {
-    device_type: deviceType(),
+    ...surfaceContext(),
     rendering_mode: renderingMode,
   });
 }
@@ -96,7 +105,7 @@ export function captureRunStarted(
     run_number: runNumber,
     run_mode: runMode,
     challenge_present: challengePresent,
-    device_type: deviceType(),
+    ...surfaceContext(),
     rendering_mode: renderingMode,
   });
 
@@ -122,7 +131,7 @@ export function captureRunResultShared(
     share_method: shareMethod,
     distance_m: Math.max(0, Math.min(99_999, Math.floor(distance))),
     relic_count: Math.max(0, Math.min(9_999, Math.floor(relics))),
-    device_type: deviceType(),
+    ...surfaceContext(),
     rendering_mode: renderingMode,
   });
 }
@@ -157,7 +166,7 @@ export function captureRunEnded(
     new_distance_best: newDistanceBest,
     challenge_present: challengeTarget !== null,
     challenge_outcome: challengeOutcome,
-    device_type: deviceType(),
+    ...surfaceContext(),
     rendering_mode: renderingMode,
   });
 }
@@ -177,7 +186,7 @@ export function captureRunDifficultyFeedback(
     run_number: runNumber,
     run_mode: runMode,
     distance_band: getDistanceBand(distance),
-    device_type: deviceType(),
+    ...surfaceContext(),
     rendering_mode: renderingMode,
   });
   return true;
@@ -189,7 +198,7 @@ export function captureFirstValue(
   distance: number,
 ) {
   captureOnce("first_value_reached", "first_value_reached", {
-    device_type: deviceType(),
+    ...surfaceContext(),
     rendering_mode: renderingMode,
     obstacle_kind: hazardKind,
     distance_m: Math.floor(distance),

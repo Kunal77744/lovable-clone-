@@ -17,8 +17,12 @@ interface Relic{mesh:THREE.Group;lane:number;z:number;taken:boolean}
 interface Spark{mesh:THREE.Mesh;velocity:THREE.Vector3;life:number}
 
 const $=<T extends HTMLElement>(s:string)=>document.querySelector<T>(s)!;
+const embedValues=new URLSearchParams(location.search).getAll("embed");
+const embedMode=embedValues.length===1&&embedValues[0]==="1";
+document.documentElement.classList.toggle("embed-mode",embedMode);
 const canvas=$("#game") as HTMLCanvasElement;
 const gameFrame=$(".game-frame");
+gameFrame.dataset.embedMode=String(embedMode);
 const startPanel=$("#start-panel"),gameOverPanel=$("#game-over-panel"),countdown=$("#countdown");
 const distanceEl=$("#distance"),relicEl=$("#relics"),multiplierEl=$("#multiplier"),toast=$("#toast");
 const bestPace=$("#best-pace"),bestPaceCopy=$("#best-pace-copy");

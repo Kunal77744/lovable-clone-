@@ -274,6 +274,79 @@
         text-underline-offset: 5px;
         font-size: 12px;
       }
+      .portal-package {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.65fr);
+        gap: 24px;
+        align-items: stretch;
+      }
+      .gameplay-clip {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(180, 202, 179, 0.2);
+        border-radius: 18px;
+        background: var(--forest);
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.38);
+      }
+      .gameplay-clip video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        background: #07100d;
+      }
+      .embed-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 28px;
+        padding: 32px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(12, 27, 21, 0.72);
+      }
+      .embed-card h3 {
+        margin-top: 12px;
+        font-size: 32px;
+        letter-spacing: -0.03em;
+      }
+      .embed-card p {
+        max-width: 39ch;
+        margin-top: 13px;
+        color: #c5cabf;
+        line-height: 1.6;
+      }
+      .embed-specs {
+        display: grid;
+        gap: 0;
+        margin: 0;
+      }
+      .embed-specs div {
+        display: grid;
+        grid-template-columns: 84px minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px 0;
+        border-top: 1px solid var(--line);
+      }
+      .embed-specs dt {
+        color: #91998f;
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .embed-specs dd {
+        min-width: 0;
+        margin: 0;
+        color: #e0e2d9;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .embed-specs code {
+        overflow-wrap: anywhere;
+        color: var(--gold-bright);
+        font: 11px/1.45 "Trebuchet MS", sans-serif;
+      }
       .details-grid {
         display: grid;
         grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
@@ -403,13 +476,15 @@
         .hero-shot img { min-height: 300px; object-position: 58% center; }
         figcaption { right: 10px; bottom: 10px; }
         .section { margin-top: 96px; }
-        .section-heading, .copy-deck, .gallery, .details-grid, .controls { grid-template-columns: 1fr; }
+        .section-heading, .copy-deck, .gallery, .portal-package, .details-grid, .controls { grid-template-columns: 1fr; }
         .section-heading { gap: 18px; margin-bottom: 32px; }
         .section-heading h2 { font-size: 46px; }
         .copy-deck { gap: 28px; }
         .one-line { grid-column: auto; padding: 30px 24px; }
         .copy-block { padding-top: 24px; }
         .gallery { gap: 20px; }
+        .portal-package { gap: 20px; }
+        .embed-card { padding: 26px 24px; }
         .gallery .mobile { width: min(74%, 390px); }
         .details-grid { gap: 58px; }
         .facts { grid-template-columns: 108px 1fr; gap: 0 16px; }
@@ -455,6 +530,38 @@
           <img src="/wildvault-social-preview.png" width="1440" height="700" alt="Wildvault Run start screen showing the explorer, stone causeway, and sunlit forest ruins." />
           <figcaption>Live game capture · desktop</figcaption>
         </figure>
+      </section>
+      <section class="section" aria-labelledby="portal-title">
+        <div class="section-heading">
+          <div>
+            <div class="section-label">Portal-ready package</div>
+            <h2 id="portal-title">Watch the run. Frame the full game.</h2>
+          </div>
+          <p>The clip is a direct capture of a live run. The embed URL removes only the outer page frame, keeping the complete game, adaptive controls, pause protection, Canvas fallback, and product analytics.</p>
+        </div>
+        <div class="portal-package">
+          <figure class="gameplay-clip">
+            <video controls muted playsinline preload="metadata" poster="/wildvault-social-preview.png" aria-label="Short Wildvault Run gameplay capture">
+              <source src="/wildvault-gameplay.mp4" type="video/mp4" />
+            </video>
+            <figcaption>Verified gameplay · 16 seconds</figcaption>
+          </figure>
+          <aside class="embed-card" aria-label="Playable embed details">
+            <div>
+              <div class="copy-label">Playable embed</div>
+              <h3>The run, edge to edge.</h3>
+              <p>Use the same public build inside an iframe. Audio waits for the player, and shared results still open the canonical full game.</p>
+            </div>
+            <div>
+              <dl class="embed-specs">
+                <div><dt>URL</dt><dd><code>https://wildvault-run.account-subscription.chatgpt.site/?embed=1</code></dd></div>
+                <div><dt>Desktop</dt><dd>16:9, 900 × 506 minimum</dd></div>
+                <div><dt>Mobile</dt><dd>390 × 844 recommended</dd></div>
+              </dl>
+              <a class="shot-link" href="/?embed=1&amp;utm_source=press-kit&amp;utm_medium=owned&amp;utm_campaign=portal-package">Open playable embed mode</a>
+            </div>
+          </aside>
+        </div>
       </section>
       <section class="section" aria-labelledby="copy-title">
         <div class="section-heading">

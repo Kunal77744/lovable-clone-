@@ -17,9 +17,33 @@ for (const requiredCopy of [
   "Play now",
   "/wildvault-social-preview.png",
   "/wildvault-mobile-gameplay.png",
+  "/wildvault-gameplay.mp4",
+  "Portal-ready package",
+  "?embed=1",
 ]) {
   assert.ok(html.includes(requiredCopy), `Missing press-kit content: ${requiredCopy}`);
 }
+
+const clip = await worker.fetch(new Request(`${gameUrl}/wildvault-gameplay.mp4`));
+assert.equal(clip.status, 200);
+assert.equal(clip.headers.get("content-type"), "video/mp4");
+assert.ok((await clip.arrayBuffer()).byteLength > 250_000);
+
+const clipRange = await worker.fetch(
+  new Request(`${gameUrl}/wildvault-gameplay.mp4`, {
+    headers: { Range: "bytes=0-1023" },
+  }),
+);
+assert.equal(clipRange.status, 206);
+assert.equal(clipRange.headers.get("content-length"), "1024");
+assert.match(clipRange.headers.get("content-range") ?? "", /^bytes 0-1023\/\d+$/);
+
+const embed = await worker.fetch(new Request(`${gameUrl}/?embed=1`));
+assert.equal(embed.status, 200);
+const embedHtml = await embed.text();
+assert.ok(embedHtml.includes("embed-mode"));
+assert.ok(embedHtml.includes("embedMode"));
+assert.ok(!embed.headers.has("x-frame-options"));
 
 assert.ok(
   html.includes(
@@ -49,4 +73,4 @@ assert.ok((await sitemap.text()).includes(`${gameUrl}/press-kit`));
 const trailingSlash = await worker.fetch(new Request(`${gameUrl}/press-kit/`));
 assert.equal(trailingSlash.status, 200);
 
-console.log("Press-kit route, copy, metadata, images, and sitemap checks passed");
+console.log("Press-kit route, embed mode, gameplay clip, metadata, images, and sitemap checks passed");
