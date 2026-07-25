@@ -1,10 +1,12 @@
 import * as THREE from "three";
 import "./style.css";
 import { captureFirstValue, captureGameOpened } from "./analytics";
+import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
 import { readChallengeDistance, shareRunResult } from "./share-result";
 
 type State = "ready"|"countdown"|"running"|"gameover";
+type RunMode = "free"|"daily";
 type HazardKind = "crate"|"arch"|"spikes";
 interface Hazard{mesh:THREE.Group;kind:HazardKind;lane:number;z:number;checked:boolean;passed:boolean}
 interface Relic{mesh:THREE.Group;lane:number;z:number;taken:boolean}
@@ -20,6 +22,8 @@ const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-
 const controlsCopy=$("#controls-copy");
 const challengeStart=$("#challenge-start"),challengeTargetEl=$("#challenge-target");
 const challengeResult=$("#challenge-result"),challengeResultCopy=$("#challenge-result-copy");
+const dailyButton=$("#daily-button") as HTMLButtonElement,dailyDateEl=$("#daily-date"),dailyStartBestEl=$("#daily-start-best");
+const dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),missionLabel=$("#mission-label");
 const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
 const coarsePointer=matchMedia("(pointer: coarse)");
 const challengeTarget=readChallengeDistance(location.search);
@@ -143,17 +147,26 @@ function makeHazard(kind:HazardKind){
   cast(g);return g;
 }
 
-let state:State="ready",lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
+let state:State="ready",activeMode:RunMode="free",lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
 let personalBest=readPersonalBest();
+let dailyKey=getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
 const lanes=[-2.25,0,2.25];
 
+function refreshDailyIntro(){
+  const currentKey=getUtcDateKey();
+  if(currentKey!==dailyKey){dailyKey=currentKey;dailyRandom=createDailyRandom(dailyKey)}
+  dailyBest=readDailyBest(dailyKey);
+  dailyDateEl.textContent=`${formatDailyDate(dailyKey)} · UTC`;
+  dailyStartBestEl.textContent=String(dailyBest.distance);
+}
 function reset(){
   hazards.forEach(h=>scene.remove(h.mesh));relicList.forEach(r=>scene.remove(r.mesh));sparks.forEach(s=>scene.remove(s.mesh));hazards.length=relicList.length=sparks.length=0;
+  if(activeMode==="daily"){dailyKey=getUtcDateKey();dailyBest=readDailyBest(dailyKey);dailyRandom=createDailyRandom(dailyKey)}
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
-function start(){
-  ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
+function start(mode:RunMode){
+  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
   const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
 }
 function gameOver(){
@@ -171,6 +184,14 @@ function gameOver(){
     challengeResultCopy.textContent=margin>0?`Target beaten by ${margin}m`:margin===0?"Target tied. One more metre wins.":`Target missed by ${Math.abs(margin)}m`;
     challengeResult.hidden=false;
   }
+  if(activeMode==="daily"){
+    const previousDaily=dailyBest;
+    dailyBest=saveDailyBest(dailyKey,{distance:runDistance,relics});
+    const dailyRecord=runDistance>previousDaily.distance;
+    dailyResultDate.textContent=`Daily ${formatDailyDate(dailyKey)} · UTC`;
+    dailyResultCopy.textContent=dailyRecord?`New daily best · ${dailyBest.distance}m`:`Today's best · ${dailyBest.distance}m`;
+    dailyResult.classList.toggle("is-record",dailyRecord);dailyResult.hidden=false;refreshDailyIntro();
+  }
   setTimeout(()=>gameOverPanel.hidden=false,300);thud();
 }
 function updateHud(){distanceEl.textContent=String(Math.floor(distance));relicEl.textContent=String(relics);multiplierEl.textContent=`×${combo}`;chainEl.textContent=`${chain%5} / 5`;progress.style.width=`${(distance%500)/5}%`}
@@ -180,9 +201,10 @@ function sound(f:number,d:number,type:OscillatorType,v=.06){if(!audioOn)return;e
 const ping=(f:number)=>sound(f,.12,"triangle",.07),thud=()=>sound(72,.32,"sawtooth",.12);
 
 function spawnPattern(){
-  pattern++;const base=-82;const chosen=pattern<2?0:Math.floor(Math.random()*3)-1;
+  const random=activeMode==="daily"?dailyRandom:Math.random;
+  pattern++;const base=-82;const chosen=pattern<2?0:Math.floor(random()*3)-1;
   if(pattern===1){for(let i=0;i<5;i++)spawnRelic(0,base-i*3.1);spawnHazard("crate",0,base-20)}
-  else{const kind=(["crate","arch","spikes"] as HazardKind[])[Math.floor(Math.random()*3)];spawnHazard(kind,chosen,base);const safe=[-1,0,1].filter(l=>l!==chosen);const rlane=safe[Math.floor(Math.random()*safe.length)];for(let i=0;i<(Math.random()>.45?3:1);i++)spawnRelic(rlane,base-3-i*2.6)}
+  else{const kind=(["crate","arch","spikes"] as HazardKind[])[Math.floor(random()*3)];spawnHazard(kind,chosen,base);const safe=[-1,0,1].filter(l=>l!==chosen);const rlane=safe[Math.floor(random()*safe.length)];for(let i=0;i<(random()>.45?3:1);i++)spawnRelic(rlane,base-3-i*2.6)}
 }
 function spawnHazard(kind:HazardKind,l:number,z:number){const mesh=makeHazard(kind);mesh.position.set(lanes[l+1],0,z);scene.add(mesh);hazards.push({mesh,kind,lane:l,z,checked:false,passed:false})}
 function spawnRelic(l:number,z:number){const mesh=makeRelic();mesh.position.set(lanes[l+1],1.65,z);scene.add(mesh);relicList.push({mesh,lane:l,z,taken:false})}
@@ -266,9 +288,9 @@ function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running
 }
 function render(now:number){const dt=(now-last)/1000;last=now;update(dt);if(renderer)renderer.render(scene,camera);else drawFallback();requestAnimationFrame(render)}
 function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.setSize(r.width,r.height,false);else{canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}camera.aspect=r.width/r.height;camera.fov=r.width/r.height<.8?64:51;camera.updateProjectionMatrix()}
-function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start();if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
+function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:"free");if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
-$("#start-button").addEventListener("click",start);$("#restart-button").addEventListener("click",start);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+$("#start-button").addEventListener("click",()=>start("free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 shareButton.addEventListener("click",async()=>{
   shareButton.disabled=true;shareStatus.textContent="Opening share…";
   const result=await shareRunResult(Math.floor(distance));
@@ -277,5 +299,5 @@ shareButton.addEventListener("click",async()=>{
   shareButton.disabled=false;
 });
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
-addEventListener("keydown",key);addEventListener("resize",resize);document.addEventListener("visibilitychange",()=>last=performance.now());
-resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
+addEventListener("keydown",key);addEventListener("resize",resize);addEventListener("focus",refreshDailyIntro);document.addEventListener("visibilitychange",()=>{last=performance.now();if(!document.hidden)refreshDailyIntro()});
+refreshDailyIntro();resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");

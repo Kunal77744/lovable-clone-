@@ -52,6 +52,11 @@
           <h1>Run the<br><em>Wildshard.</em></h1>
           <p>The old causeway is collapsing. Take the sunshards and stay ahead of what woke beneath it.</p>
           <button id="start-button" class="primary-button" type="button"><span>Enter the vault</span><b>→</b></button>
+          <button id="daily-button" class="daily-run-entry" type="button">
+            <span>Daily route</span>
+            <strong id="daily-date">Today · UTC</strong>
+            <small>Best <b id="daily-start-best">0</b>m</small>
+          </button>
           <div id="controls-copy" class="controls-copy" data-input="keyboard">
             <div class="control-guide" data-control-guide="keyboard" aria-label="Keyboard controls">
               <span><kbd>←</kbd><kbd>→</kbd> Shift</span>
@@ -69,7 +74,7 @@
 
         <div id="countdown" class="countdown" hidden></div>
         <div id="toast" class="toast" aria-live="assertive"></div>
-        <div id="mission" class="mission" hidden><span>Relic chain</span><strong id="chain">0 / 5</strong></div>
+        <div id="mission" class="mission" hidden><span id="mission-label">Relic chain</span><strong id="chain">0 / 5</strong></div>
 
         <div id="game-over-panel" class="game-over-panel" hidden>
           <div class="chapter"><span></span><b id="record-status">Expedition ended</b></div>
@@ -78,6 +83,10 @@
           <div id="challenge-result" class="challenge-result" hidden>
             <span>Challenge result</span>
             <strong id="challenge-result-copy"></strong>
+          </div>
+          <div id="daily-result" class="daily-result" hidden>
+            <span id="daily-result-date">Daily route</span>
+            <strong id="daily-result-copy">Today's best 0m</strong>
           </div>
           <div class="results">
             <div><span>Sunshards</span><strong id="final-relics">0</strong></div>
