@@ -4,6 +4,7 @@ import { captureFirstValue, captureGameOpened, captureRunResultShared, captureRu
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { completeDailyStreak, readDailyStreak, visibleDailyStreak } from "./daily-streak";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
+import { setupPwa } from "./pwa";
 import { readChallengeDistance, readDailyChallenge, shareRunResult } from "./share-result";
 
 type State = "ready"|"countdown"|"running"|"paused"|"gameover";
@@ -30,6 +31,7 @@ const dailyStartStreak=$("#daily-start-streak"),dailyResult=$("#daily-result"),d
 const startButtonCopy=$("#start-button-copy");
 const pausePanel=$("#pause-panel"),pauseCopy=$("#pause-copy"),pauseDistance=$("#pause-distance"),pauseHint=$("#pause-hint");
 const pauseButton=$("#pause-button") as HTMLButtonElement,resumeButton=$("#resume-button") as HTMLButtonElement;
+const installButton=$("#install-button") as HTMLButtonElement;
 const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
 const coarsePointer=matchMedia("(pointer: coarse)");
 const challengeTarget=readChallengeDistance(location.search);
@@ -374,3 +376,4 @@ shareButton.addEventListener("click",async()=>{
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
 addEventListener("keydown",key);addEventListener("resize",resize);addEventListener("focus",refreshDailyIntro);document.addEventListener("visibilitychange",()=>{last=performance.now();if(document.hidden)pauseRun(true);else refreshDailyIntro()});
 setState("ready");refreshDailyIntro();resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
+setupPwa(installButton);

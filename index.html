@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Dodge hazards, collect sunshards, and push for a longer run in this instant-play browser runner." />
     <meta name="theme-color" content="#070b09" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <link rel="canonical" href="https://wildvault-run.account-subscription.chatgpt.site" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Wildvault Run" />
     <meta property="og:title" content="Wildvault Run" />
@@ -78,6 +81,10 @@
             <strong id="daily-date">Today · UTC</strong>
             <small class="daily-entry-best">Best <b id="daily-start-best">0</b>m</small>
             <small id="daily-start-streak" class="daily-streak">Start streak</small>
+          </button>
+          <button id="install-button" class="install-entry" type="button" hidden>
+            <span aria-hidden="true">◇</span>
+            Install for quick return
           </button>
           <div id="controls-copy" class="controls-copy" data-input="keyboard">
             <div class="control-guide" data-control-guide="keyboard" aria-label="Keyboard controls">

@@ -8,6 +8,7 @@
     "build": "tsc && vite build && node scripts/build-sites.mjs",
     "preview": "vite preview --host 0.0.0.0",
     "check": "tsc --noEmit",
+    "check:pwa": "npm run build && node scripts/check-pwa.mjs",
     "check:streak": "node scripts/check-daily-streak.mjs",
     "check:previews": "npm run build && node scripts/check-social-previews.mjs"
   },
