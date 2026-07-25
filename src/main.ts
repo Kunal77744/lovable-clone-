@@ -1,9 +1,10 @@
 import * as THREE from "three";
 import "./style.css";
+import { captureFirstValue, captureGameOpened } from "./analytics";
 
 type State = "ready"|"countdown"|"running"|"gameover";
 type HazardKind = "crate"|"arch"|"spikes";
-interface Hazard{mesh:THREE.Group;kind:HazardKind;lane:number;z:number;checked:boolean}
+interface Hazard{mesh:THREE.Group;kind:HazardKind;lane:number;z:number;checked:boolean;passed:boolean}
 interface Relic{mesh:THREE.Group;lane:number;z:number;taken:boolean}
 interface Spark{mesh:THREE.Mesh;velocity:THREE.Vector3;life:number}
 
@@ -143,7 +144,7 @@ function spawnPattern(){
   if(pattern===1){for(let i=0;i<5;i++)spawnRelic(0,base-i*3.1);spawnHazard("crate",0,base-20)}
   else{const kind=(["crate","arch","spikes"] as HazardKind[])[Math.floor(Math.random()*3)];spawnHazard(kind,chosen,base);const safe=[-1,0,1].filter(l=>l!==chosen);const rlane=safe[Math.floor(Math.random()*safe.length)];for(let i=0;i<(Math.random()>.45?3:1);i++)spawnRelic(rlane,base-3-i*2.6)}
 }
-function spawnHazard(kind:HazardKind,l:number,z:number){const mesh=makeHazard(kind);mesh.position.set(lanes[l+1],0,z);scene.add(mesh);hazards.push({mesh,kind,lane:l,z,checked:false})}
+function spawnHazard(kind:HazardKind,l:number,z:number){const mesh=makeHazard(kind);mesh.position.set(lanes[l+1],0,z);scene.add(mesh);hazards.push({mesh,kind,lane:l,z,checked:false,passed:false})}
 function spawnRelic(l:number,z:number){const mesh=makeRelic();mesh.position.set(lanes[l+1],1.65,z);scene.add(mesh);relicList.push({mesh,lane:l,z,taken:false})}
 function burst(pos:THREE.Vector3,color=0xffc94f,n=18){for(let i=0;i<n;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.045+Math.random()*.06,5,4),new THREE.MeshBasicMaterial({color}));m.position.copy(pos);scene.add(m);sparks.push({mesh:m,velocity:new THREE.Vector3((Math.random()-.5)*5,Math.random()*4,(Math.random()-.5)*4),life:.55+Math.random()*.35})}}
 function move(dir:number){if(state!=="running")return;lane=Math.max(-1,Math.min(1,lane+dir));targetX=lanes[lane+1];runner.rotation.z=-dir*.12;ping(170+lane*18)}
@@ -164,7 +165,7 @@ function update(dt:number){
     distance+=d*speed*1.55;speed=Math.min(27,15+distance/130);spawnClock-=d;if(spawnClock<=0){spawnPattern();spawnClock=Math.max(1.75,3.0-distance/1300)}
     if(jumpY>0||jumpV>0){jumpY+=jumpV*d;jumpV-=20*d;if(jumpY<=0){jumpY=0;jumpV=0;burst(new THREE.Vector3(runner.position.x,.08,3),0x8fa58f,7)}}
     slide=Math.max(0,slide-d);
-    hazards.forEach(h=>{h.z+=speed*d;h.mesh.position.z=h.z;const close=h.z>2.1&&h.z<4.1&&Math.abs(h.lane-lane)<.35;if(close&&!h.checked){const avoided=(h.kind!=="arch"&&jumpY>1.05)||(h.kind==="arch"&&slide>.08);h.checked=true;if(avoided){combo=Math.min(5,combo+1);bestCombo=Math.max(bestCombo,combo);pop("Clean escape");ping(510)}else gameOver()}});
+    hazards.forEach(h=>{h.z+=speed*d;h.mesh.position.z=h.z;const close=h.z>2.1&&h.z<4.1&&Math.abs(h.lane-lane)<.35;if(close&&!h.checked){const avoided=(h.kind!=="arch"&&jumpY>1.05)||(h.kind==="arch"&&slide>.08);h.checked=true;if(avoided){combo=Math.min(5,combo+1);bestCombo=Math.max(bestCombo,combo);pop("Clean escape");ping(510)}else gameOver()}if(state==="running"&&!h.passed&&h.z>=4.25){h.passed=true;captureFirstValue(renderer?"webgl":"canvas",h.kind,distance)}});
     relicList.forEach(r=>{r.z+=speed*d;r.mesh.position.z=r.z;r.mesh.rotation.y+=d*3.5;r.mesh.position.y=1.65+Math.sin(runT+r.z)*.13;if(!r.taken&&r.z>2&&r.z<4.25&&Math.abs(r.lane-lane)<.4&&jumpY<2.3){r.taken=true;relics++;chain++;if(chain%5===0){combo=Math.min(5,combo+1);bestCombo=Math.max(bestCombo,combo);pop(`Relic chain ×${combo}`)}else pop("+ Sunshard");multiplierEl.classList.add("pop");setTimeout(()=>multiplierEl.classList.remove("pop"),180);burst(r.mesh.position.clone(),0xffc94f,22);ping(650+(relics%5)*55);scene.remove(r.mesh)}});
     for(let i=hazards.length-1;i>=0;i--)if(hazards[i].z>13){scene.remove(hazards[i].mesh);hazards.splice(i,1)}
     for(let i=relicList.length-1;i>=0;i--)if(relicList[i].z>13||relicList[i].taken)relicList.splice(i,1);
@@ -230,4 +231,4 @@ let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.client
 $("#start-button").addEventListener("click",start);$("#restart-button").addEventListener("click",start);$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 document.querySelectorAll<HTMLButtonElement>("[data-action]").forEach(b=>b.addEventListener("pointerdown",e=>{e.preventDefault();const a=b.dataset.action;a==="left"?move(-1):a==="right"?move(1):a==="jump"?jump():duck()}));
 addEventListener("keydown",key);addEventListener("resize",resize);document.addEventListener("visibilitychange",()=>last=performance.now());
-resize();updateHud();requestAnimationFrame(render);
+resize();updateHud();requestAnimationFrame(render);captureGameOpened(renderer?"webgl":"canvas");
