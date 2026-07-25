@@ -22,6 +22,23 @@ for (const copy of requiredCopy) {
 }
 
 assert.equal((html.match(/class="play-now"/g) ?? []).length, 1);
+assert.match(html, /class="play-now" href="#play"/);
+assert.match(html, /id="play" aria-label="Play Wildvault Run"/);
+assert.match(html, /id="game-player"/);
+assert.match(
+  html,
+  /src="\/\?embed=1&amp;utm_source=free-browser-runner&amp;utm_medium=organic&amp;utm_campaign=inline-play"/,
+);
+assert.match(html, /gamePlayer\.contentWindow\.focus\(\)/);
+assert.match(html, /querySelector\("#start-button"\)/);
+
+const embedResponse = await worker.default.fetch(
+  new Request(`${gameUrl}/?embed=1`),
+);
+assert.equal(embedResponse.status, 200);
+const embedHtml = await embedResponse.text();
+assert.match(embedHtml, /embed_mode/);
+assert.match(embedHtml, /embedMode/);
 assert.ok(
   html.includes(
     '<link rel="canonical" href="https://wildvault-run.account-subscription.chatgpt.site/free-browser-runner"',
@@ -54,5 +71,5 @@ assert.equal(pressKitResponse.status, 200);
 assert.ok((await pressKitResponse.text()).includes('href="/free-browser-runner"'));
 
 console.log(
-  "Free browser runner route, metadata, schema, sitemap, and internal-link checks passed",
+  "Free browser runner route, inline game, focus handoff, metadata, schema, sitemap, and internal-link checks passed",
 );
