@@ -2,7 +2,7 @@ import * as THREE from "three";
 import "./style.css";
 import { captureFirstValue, captureGameOpened } from "./analytics";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
-import { shareRunResult } from "./share-result";
+import { readChallengeDistance, shareRunResult } from "./share-result";
 
 type State = "ready"|"countdown"|"running"|"gameover";
 type HazardKind = "crate"|"arch"|"spikes";
@@ -18,8 +18,16 @@ const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLin
 const bestDistanceEl=$("#best-distance"),bestRelicsEl=$("#best-relics"),recordStatusEl=$("#record-status");
 const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-status");
 const controlsCopy=$("#controls-copy");
+const challengeStart=$("#challenge-start"),challengeTargetEl=$("#challenge-target");
+const challengeResult=$("#challenge-result"),challengeResultCopy=$("#challenge-result-copy");
 const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
 const coarsePointer=matchMedia("(pointer: coarse)");
+const challengeTarget=readChallengeDistance(location.search);
+
+if(challengeTarget!==null){
+  challengeStart.hidden=false;
+  challengeTargetEl.textContent=String(challengeTarget);
+}
 
 function setControlGuide(input:"keyboard"|"touch"){
   controlsCopy.dataset.input=input;
@@ -145,7 +153,7 @@ function reset(){
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
 function start(){
-  ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;shareStatus.textContent="";shareButton.disabled=false;mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
+  ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
   const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
 }
 function gameOver(){
@@ -156,6 +164,13 @@ function gameOver(){
   bestDistanceEl.textContent=String(personalBest.distance);bestRelicsEl.textContent=String(personalBest.relics);
   recordStatusEl.textContent=distanceRecord&&relicRecord?"Two new records":distanceRecord?"New distance record":relicRecord?"New sunshard record":"Expedition ended";
   $("#run-summary").textContent=distance>700?"You reached the sunken gate.":distance>300?"The vault has started to notice you.":"The causeway demands another run.";
+  if(challengeTarget!==null){
+    const margin=runDistance-challengeTarget;
+    challengeResult.classList.toggle("is-won",margin>0);
+    challengeResult.classList.toggle("is-missed",margin<=0);
+    challengeResultCopy.textContent=margin>0?`Target beaten by ${margin}m`:margin===0?"Target tied. One more metre wins.":`Target missed by ${Math.abs(margin)}m`;
+    challengeResult.hidden=false;
+  }
   setTimeout(()=>gameOverPanel.hidden=false,300);thud();
 }
 function updateHud(){distanceEl.textContent=String(Math.floor(distance));relicEl.textContent=String(relics);multiplierEl.textContent=`×${combo}`;chainEl.textContent=`${chain%5} / 5`;progress.style.width=`${(distance%500)/5}%`}

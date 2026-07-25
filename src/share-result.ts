@@ -1,8 +1,34 @@
 export const GAME_URL = "https://wildvault-run.account-subscription.chatgpt.site";
+export const MAX_CHALLENGE_DISTANCE = 99_999;
 
 export interface ShareResult {
   outcome: "shared" | "copied" | "cancelled" | "failed";
   message: string;
+}
+
+export function readChallengeDistance(search: string): number | null {
+  const rawDistance = new URLSearchParams(search).get("challenge");
+  if (rawDistance === null || !/^\d{1,5}$/.test(rawDistance)) return null;
+
+  const distance = Number(rawDistance);
+  return Number.isSafeInteger(distance) && distance <= MAX_CHALLENGE_DISTANCE
+    ? distance
+    : null;
+}
+
+export function buildChallengeUrl(distance: number): string {
+  const runDistance = Math.floor(distance);
+  if (
+    !Number.isFinite(runDistance) ||
+    runDistance < 0 ||
+    runDistance > MAX_CHALLENGE_DISTANCE
+  ) {
+    return GAME_URL;
+  }
+
+  const url = new URL(GAME_URL);
+  url.searchParams.set("challenge", String(runDistance));
+  return url.toString();
 }
 
 function copyText(text: string): Promise<void> {
@@ -31,14 +57,16 @@ function copyText(text: string): Promise<void> {
 }
 
 export async function shareRunResult(distance: number): Promise<ShareResult> {
-  const text = `I ran ${distance}m through Wildvault. Can you beat it?`;
+  const runDistance = Math.floor(distance);
+  const text = `I ran ${runDistance}m through Wildvault. Can you beat it?`;
+  const challengeUrl = buildChallengeUrl(runDistance);
 
   if (navigator.share) {
     try {
       await navigator.share({
         title: "Wildvault Run",
         text,
-        url: GAME_URL,
+        url: challengeUrl,
       });
       return { outcome: "shared", message: "Challenge shared" };
     } catch (error) {
@@ -49,7 +77,7 @@ export async function shareRunResult(distance: number): Promise<ShareResult> {
   }
 
   try {
-    await copyText(`${text} ${GAME_URL}`);
+    await copyText(`${text} ${challengeUrl}`);
     return { outcome: "copied", message: "Challenge copied to clipboard" };
   } catch {
     return { outcome: "failed", message: "Could not copy. Try again." };
