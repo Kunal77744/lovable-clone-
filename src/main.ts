@@ -3,7 +3,7 @@ import "./style.css";
 import { captureFirstValue, captureGameOpened, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
-import { readChallengeDistance, shareRunResult } from "./share-result";
+import { readChallengeDistance, readDailyChallenge, shareRunResult } from "./share-result";
 
 type State = "ready"|"countdown"|"running"|"gameover";
 type RunMode = "free"|"daily";
@@ -20,17 +20,24 @@ const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLin
 const bestDistanceEl=$("#best-distance"),bestRelicsEl=$("#best-relics"),recordStatusEl=$("#record-status");
 const shareButton=$("#share-button") as HTMLButtonElement,shareStatus=$("#share-status");
 const controlsCopy=$("#controls-copy");
-const challengeStart=$("#challenge-start"),challengeTargetEl=$("#challenge-target");
+const challengeStart=$("#challenge-start"),challengeLabel=$("#challenge-label"),challengeTargetEl=$("#challenge-target");
 const challengeResult=$("#challenge-result"),challengeResultCopy=$("#challenge-result-copy");
 const dailyButton=$("#daily-button") as HTMLButtonElement,dailyDateEl=$("#daily-date"),dailyStartBestEl=$("#daily-start-best");
 const dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),missionLabel=$("#mission-label");
+const startButtonCopy=$("#start-button-copy");
 const controlGuides=[...document.querySelectorAll<HTMLElement>("[data-control-guide]")];
 const coarsePointer=matchMedia("(pointer: coarse)");
 const challengeTarget=readChallengeDistance(location.search);
+const dailyChallenge=readDailyChallenge(location.search);
 
 if(challengeTarget!==null){
   challengeStart.hidden=false;
   challengeTargetEl.textContent=String(challengeTarget);
+  if(dailyChallenge){
+    challengeLabel.textContent=`Daily ${formatDailyDate(dailyChallenge.date)} · UTC`;
+    startButtonCopy.textContent="Run this daily route";
+    dailyButton.hidden=true;
+  }
 }
 
 function setControlGuide(input:"keyboard"|"touch"){
@@ -149,7 +156,7 @@ function makeHazard(kind:HazardKind){
 
 let state:State="ready",activeMode:RunMode="free",lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
 let personalBest=readPersonalBest();
-let dailyKey=getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
+let dailyKey=dailyChallenge?.date??getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
 const lanes=[-2.25,0,2.25];
 
@@ -162,7 +169,7 @@ function refreshDailyIntro(){
 }
 function reset(){
   hazards.forEach(h=>scene.remove(h.mesh));relicList.forEach(r=>scene.remove(r.mesh));sparks.forEach(s=>scene.remove(s.mesh));hazards.length=relicList.length=sparks.length=0;
-  if(activeMode==="daily"){dailyKey=getUtcDateKey();dailyBest=readDailyBest(dailyKey);dailyRandom=createDailyRandom(dailyKey)}
+  if(activeMode==="daily"){dailyKey=dailyChallenge?.date??getUtcDateKey();dailyBest=readDailyBest(dailyKey);dailyRandom=createDailyRandom(dailyKey)}
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
 function start(mode:RunMode){
@@ -289,12 +296,12 @@ function drawFallbackRunner(c:CanvasRenderingContext2D,w:number,h:number,running
 }
 function render(now:number){const dt=(now-last)/1000;last=now;update(dt);if(renderer)renderer.render(scene,camera);else drawFallback();requestAnimationFrame(render)}
 function resize(){const r=canvas.getBoundingClientRect();if(renderer)renderer.setSize(r.width,r.height,false);else{canvas.width=Math.round(r.width*devicePixelRatio);canvas.height=Math.round(r.height*devicePixelRatio)}camera.aspect=r.width/r.height;camera.fov=r.width/r.height<.8?64:51;camera.updateProjectionMatrix()}
-function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:"free");if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
+function key(e:KeyboardEvent){setControlGuide("keyboard");if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"," "].includes(e.key))e.preventDefault();if((e.key==="Enter"||e.key===" ")&&(state==="ready"||state==="gameover"))start(state==="gameover"?activeMode:dailyChallenge?"daily":"free");if(e.repeat)return;if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);if(e.key==="ArrowUp"||e.key.toLowerCase()==="w"||e.key===" ")jump();if(e.key==="ArrowDown"||e.key.toLowerCase()==="s")duck()}
 let sx=0,sy=0;canvas.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY});canvas.addEventListener("pointerup",e=>{const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)<25&&Math.abs(dy)<25)return;if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1);else dy<0?jump():duck()});
-$("#start-button").addEventListener("click",()=>start("free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
+$("#start-button").addEventListener("click",()=>start(dailyChallenge?"daily":"free"));dailyButton.addEventListener("click",()=>start("daily"));$("#restart-button").addEventListener("click",()=>start(activeMode));$("#sound-toggle").addEventListener("click",()=>{audioOn=!audioOn;$("#sound-toggle span").textContent=audioOn?"◖":"○";if(audioOn)ping(430)});
 shareButton.addEventListener("click",async()=>{
   shareButton.disabled=true;shareStatus.textContent="Opening share…";
-  const result=await shareRunResult(Math.floor(distance));
+  const result=await shareRunResult(Math.floor(distance),activeMode==="daily"?dailyKey:undefined);
   shareStatus.textContent=result.message;
   shareStatus.dataset.state=result.outcome;
   shareButton.disabled=false;

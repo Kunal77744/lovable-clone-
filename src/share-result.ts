@@ -1,9 +1,17 @@
+import { getUtcDateKey } from "./daily-challenge";
+
 export const GAME_URL = "https://wildvault-run.account-subscription.chatgpt.site";
 export const MAX_CHALLENGE_DISTANCE = 99_999;
 
 export interface ShareResult {
   outcome: "shared" | "copied" | "cancelled" | "failed";
   message: string;
+}
+
+export interface DailyChallenge {
+  mode: "daily";
+  date: string;
+  distance: number;
 }
 
 export function readChallengeDistance(search: string): number | null {
@@ -16,7 +24,32 @@ export function readChallengeDistance(search: string): number | null {
     : null;
 }
 
-export function buildChallengeUrl(distance: number): string {
+export function readDailyChallenge(
+  search: string,
+  currentDate = getUtcDateKey(),
+): DailyChallenge | null {
+  const params = new URLSearchParams(search);
+  const date = params.get("date");
+  const distance = readChallengeDistance(search);
+
+  if (
+    params.get("mode") !== "daily" ||
+    date === null ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+    date !== currentDate ||
+    distance === null
+  ) {
+    return null;
+  }
+
+  return { mode: "daily", date, distance };
+}
+
+export function buildChallengeUrl(
+  distance: number,
+  dailyDate?: string,
+  currentDate = getUtcDateKey(),
+): string {
   const runDistance = Math.floor(distance);
   if (
     !Number.isFinite(runDistance) ||
@@ -28,6 +61,10 @@ export function buildChallengeUrl(distance: number): string {
 
   const url = new URL(GAME_URL);
   url.searchParams.set("challenge", String(runDistance));
+  if (dailyDate === currentDate) {
+    url.searchParams.set("mode", "daily");
+    url.searchParams.set("date", dailyDate);
+  }
   return url.toString();
 }
 
@@ -56,10 +93,16 @@ function copyText(text: string): Promise<void> {
   });
 }
 
-export async function shareRunResult(distance: number): Promise<ShareResult> {
+export async function shareRunResult(
+  distance: number,
+  dailyDate?: string,
+): Promise<ShareResult> {
   const runDistance = Math.floor(distance);
-  const text = `I ran ${runDistance}m through Wildvault. Can you beat it?`;
-  const challengeUrl = buildChallengeUrl(runDistance);
+  const isDaily = dailyDate === getUtcDateKey();
+  const text = isDaily
+    ? `I ran ${runDistance}m on today's Wildvault route. Can you beat it on the same course?`
+    : `I ran ${runDistance}m through Wildvault. Can you beat it?`;
+  const challengeUrl = buildChallengeUrl(runDistance, dailyDate);
 
   if (navigator.share) {
     try {
