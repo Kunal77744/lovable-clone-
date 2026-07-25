@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import "./style.css";
 import { captureFirstValue, captureGameOpened } from "./analytics";
+import { readPersonalBest, savePersonalBest } from "./personal-best";
 
 type State = "ready"|"countdown"|"running"|"gameover";
 type HazardKind = "crate"|"arch"|"spikes";
@@ -13,6 +14,7 @@ const canvas=$("#game") as HTMLCanvasElement;
 const startPanel=$("#start-panel"),gameOverPanel=$("#game-over-panel"),countdown=$("#countdown");
 const distanceEl=$("#distance"),relicEl=$("#relics"),multiplierEl=$("#multiplier"),toast=$("#toast");
 const chainEl=$("#chain"),mission=$("#mission"),progress=$("#progress"),speedLines=$("#speed-lines");
+const bestDistanceEl=$("#best-distance"),bestRelicsEl=$("#best-relics"),recordStatusEl=$("#record-status");
 
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x07100d);
@@ -117,6 +119,7 @@ function makeHazard(kind:HazardKind){
 }
 
 let state:State="ready",lane=0,targetX=0,jumpY=0,jumpV=0,slide=0,distance=0,relics=0,combo=1,bestCombo=1,chain=0,speed=15,spawnClock=0,pattern=0,last=performance.now(),toastClock=0,shake=0,flash=0,audioOn=true,audio:AudioContext|null=null;
+let personalBest=readPersonalBest();
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
 const lanes=[-2.25,0,2.25];
 
@@ -129,7 +132,12 @@ function start(){
   const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
 }
 function gameOver(){
-  state="gameover";shake=.8;mission.hidden=true;$("#final-distance").textContent=String(Math.floor(distance));$("#final-relics").textContent=String(relics);$("#final-chain").textContent=`×${bestCombo}`;
+  const runDistance=Math.floor(distance),previousBest=personalBest;
+  personalBest=savePersonalBest({distance:runDistance,relics});
+  const distanceRecord=runDistance>previousBest.distance,relicRecord=relics>previousBest.relics;
+  state="gameover";shake=.8;mission.hidden=true;$("#final-distance").textContent=String(runDistance);$("#final-relics").textContent=String(relics);$("#final-chain").textContent=`×${bestCombo}`;
+  bestDistanceEl.textContent=String(personalBest.distance);bestRelicsEl.textContent=String(personalBest.relics);
+  recordStatusEl.textContent=distanceRecord&&relicRecord?"Two new records":distanceRecord?"New distance record":relicRecord?"New sunshard record":"Expedition ended";
   $("#run-summary").textContent=distance>700?"You reached the sunken gate.":distance>300?"The vault has started to notice you.":"The causeway demands another run.";
   setTimeout(()=>gameOverPanel.hidden=false,300);thud();
 }

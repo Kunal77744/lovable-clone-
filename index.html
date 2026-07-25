@@ -43,12 +43,19 @@
         <div id="mission" class="mission" hidden><span>Relic chain</span><strong id="chain">0 / 5</strong></div>
 
         <div id="game-over-panel" class="game-over-panel" hidden>
-          <div class="chapter"><span></span> Expedition ended</div>
+          <div class="chapter"><span></span><b id="record-status">Expedition ended</b></div>
           <h2><span id="final-distance">0</span><small>m</small></h2>
           <p id="run-summary">The vault keeps what it takes.</p>
           <div class="results">
             <div><span>Sunshards</span><strong id="final-relics">0</strong></div>
             <div><span>Best chain</span><strong id="final-chain">×1</strong></div>
+          </div>
+          <div class="personal-records" aria-label="Personal bests saved on this device">
+            <span>Personal best</span>
+            <div>
+              <strong><b id="best-distance">0</b>m <small>distance</small></strong>
+              <strong><b id="best-relics">0</b> <small>sunshards</small></strong>
+            </div>
           </div>
           <button id="restart-button" class="primary-button" type="button"><span>Run it back</span><b>↻</b></button>
         </div>
