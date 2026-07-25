@@ -31,7 +31,7 @@ const workerPath = resolve(dist, "server", "index.js");
 await mkdir(dirname(workerPath), { recursive: true });
 await writeFile(
   workerPath,
-  `const html = ${JSON.stringify(html)};\n\nexport default {\n  async fetch(request) {\n    const url = new URL(request.url);\n    if (url.pathname !== "/" && url.pathname !== "/index.html") {\n      return new Response("Not found", { status: 404 });\n    }\n    return new Response(html, {\n      headers: {\n        "content-type": "text/html; charset=utf-8",\n        "cache-control": "public, max-age=300",\n        "x-content-type-options": "nosniff",\n        "referrer-policy": "strict-origin-when-cross-origin",\n      },\n    });\n  },\n};\n`,
+  `const html = ${JSON.stringify(html)};\n\nexport default {\n  async fetch(request) {\n    const url = new URL(request.url);\n    if (url.pathname !== "/" && url.pathname !== "/index.html") {\n      return new Response("Not found", { status: 404 });\n    }\n    return new Response(html, {\n      headers: {\n        "content-type": "text/html; charset=utf-8",\n        "cache-control": "no-store, max-age=0",\n        "x-content-type-options": "nosniff",\n        "referrer-policy": "strict-origin-when-cross-origin",\n      },\n    });\n  },\n};\n`,
 );
 
 await mkdir(resolve(dist, ".openai"), { recursive: true });
