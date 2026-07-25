@@ -12,14 +12,14 @@ const stylesheet = html.match(/<link rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/)
 if (stylesheet) {
   const cssPath = resolve(dist, stylesheet[1].replace(/^\.?\//, ""));
   const css = await readFile(cssPath, "utf8");
-  html = html.replace(stylesheet[0], `<style>${css}</style>`);
+  html = html.replace(stylesheet[0], () => `<style>${css}</style>`);
 }
 
 const moduleScript = html.match(/<script type="module"[^>]*src="([^"]+)"[^>]*><\/script>/);
 if (moduleScript) {
   const scriptPath = resolve(dist, moduleScript[1].replace(/^\.?\//, ""));
-  const script = await readFile(scriptPath, "utf8");
-  html = html.replace(moduleScript[0], `<script type="module">${script}</script>`);
+  const script = (await readFile(scriptPath, "utf8")).replace(/<\/script/gi, "<\\/script");
+  html = html.replace(moduleScript[0], () => `<script type="module">${script}</script>`);
 }
 
 html = html.replace(
