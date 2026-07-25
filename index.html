@@ -76,7 +76,8 @@
           <button id="daily-button" class="daily-run-entry" type="button">
             <span>Daily route</span>
             <strong id="daily-date">Today · UTC</strong>
-            <small>Best <b id="daily-start-best">0</b>m</small>
+            <small class="daily-entry-best">Best <b id="daily-start-best">0</b>m</small>
+            <small id="daily-start-streak" class="daily-streak">Start streak</small>
           </button>
           <div id="controls-copy" class="controls-copy" data-input="keyboard">
             <div class="control-guide" data-control-guide="keyboard" aria-label="Keyboard controls">
@@ -115,8 +116,11 @@
             <strong id="challenge-result-copy"></strong>
           </div>
           <div id="daily-result" class="daily-result" hidden>
-            <span id="daily-result-date">Daily route</span>
-            <strong id="daily-result-copy">Today's best 0m</strong>
+            <div>
+              <span id="daily-result-date">Daily route</span>
+              <strong id="daily-result-copy">Today's best 0m</strong>
+            </div>
+            <small id="daily-result-streak" class="daily-streak">◆ Streak started · return tomorrow</small>
           </div>
           <div class="results">
             <div><span>Sunshards</span><strong id="final-relics">0</strong></div>

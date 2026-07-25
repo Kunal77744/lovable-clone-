@@ -2,6 +2,7 @@ import * as THREE from "three";
 import "./style.css";
 import { captureFirstValue, captureGameOpened, captureRunResultShared, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
+import { completeDailyStreak, readDailyStreak, visibleDailyStreak } from "./daily-streak";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
 import { readChallengeDistance, readDailyChallenge, shareRunResult } from "./share-result";
 
@@ -25,7 +26,7 @@ const controlsCopy=$("#controls-copy");
 const challengeStart=$("#challenge-start"),challengeLabel=$("#challenge-label"),challengeTargetEl=$("#challenge-target");
 const challengeResult=$("#challenge-result"),challengeResultCopy=$("#challenge-result-copy");
 const dailyButton=$("#daily-button") as HTMLButtonElement,dailyDateEl=$("#daily-date"),dailyStartBestEl=$("#daily-start-best");
-const dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),missionLabel=$("#mission-label");
+const dailyStartStreak=$("#daily-start-streak"),dailyResult=$("#daily-result"),dailyResultDate=$("#daily-result-date"),dailyResultCopy=$("#daily-result-copy"),dailyResultStreak=$("#daily-result-streak"),missionLabel=$("#mission-label");
 const startButtonCopy=$("#start-button-copy");
 const pausePanel=$("#pause-panel"),pauseCopy=$("#pause-copy"),pauseDistance=$("#pause-distance"),pauseHint=$("#pause-hint");
 const pauseButton=$("#pause-button") as HTMLButtonElement,resumeButton=$("#resume-button") as HTMLButtonElement;
@@ -165,6 +166,7 @@ let countdownTimer:number|undefined;
 let personalBest=readPersonalBest();
 let runBestDistance=0;
 let dailyKey=dailyChallenge?.date??getUtcDateKey(),dailyBest=readDailyBest(dailyKey),dailyRandom=createDailyRandom(dailyKey);
+let dailyStreak=readDailyStreak();
 const hazards:Hazard[]=[],relicList:Relic[]=[],sparks:Spark[]=[];
 const lanes=[-2.25,0,2.25];
 
@@ -172,8 +174,11 @@ function refreshDailyIntro(){
   const currentKey=getUtcDateKey();
   if(currentKey!==dailyKey){dailyKey=currentKey;dailyRandom=createDailyRandom(dailyKey)}
   dailyBest=readDailyBest(dailyKey);
+  dailyStreak=readDailyStreak();
   dailyDateEl.textContent=`${formatDailyDate(dailyKey)} · UTC`;
   dailyStartBestEl.textContent=String(dailyBest.distance);
+  const streakCount=visibleDailyStreak(dailyKey,dailyStreak);
+  dailyStartStreak.textContent=streakCount>0?`◆ ${streakCount} day${streakCount===1?"":"s"} streak`:"Start streak";
 }
 function reset(){
   hazards.forEach(h=>scene.remove(h.mesh));relicList.forEach(r=>scene.remove(r.mesh));sparks.forEach(s=>scene.remove(s.mesh));hazards.length=relicList.length=sparks.length=0;
@@ -238,9 +243,12 @@ function gameOver(){
   if(activeMode==="daily"){
     const previousDaily=dailyBest;
     dailyBest=saveDailyBest(dailyKey,{distance:runDistance,relics});
+    dailyStreak=completeDailyStreak(dailyKey);
+    const streakCount=visibleDailyStreak(dailyKey,dailyStreak);
     const dailyRecord=runDistance>previousDaily.distance;
     dailyResultDate.textContent=`Daily ${formatDailyDate(dailyKey)} · UTC`;
     dailyResultCopy.textContent=dailyRecord?`New daily best · ${dailyBest.distance}m`:`Today's best · ${dailyBest.distance}m`;
+    dailyResultStreak.textContent=streakCount===1?"◆ Streak started · return tomorrow":`◆ ${streakCount}-day streak · return tomorrow`;
     dailyResult.classList.toggle("is-record",dailyRecord);dailyResult.hidden=false;refreshDailyIntro();
   }
   setTimeout(()=>gameOverPanel.hidden=false,300);thud();
