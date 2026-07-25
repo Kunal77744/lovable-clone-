@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import "./style.css";
-import { captureFirstValue, captureGameOpened } from "./analytics";
+import { captureFirstValue, captureGameOpened, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
 import { readChallengeDistance, shareRunResult } from "./share-result";
@@ -166,7 +166,8 @@ function reset(){
   lane=0;targetX=0;jumpY=0;jumpV=0;slide=0;distance=0;relics=0;combo=1;bestCombo=1;chain=0;speed=15;spawnClock=.8;pattern=0;runner.visible=true;updateHud();
 }
 function start(mode:RunMode){
-  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;state="countdown";let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
+  if(state!=="ready"&&state!=="gameover")return;
+  activeMode=mode;ensureAudio();reset();startPanel.hidden=true;gameOverPanel.hidden=true;challengeResult.hidden=true;dailyResult.hidden=true;shareStatus.textContent="";shareButton.disabled=false;missionLabel.textContent=activeMode==="daily"?`Daily ${formatDailyDate(dailyKey)}`:"Relic chain";mission.hidden=false;state="countdown";captureRunStarted(renderer?"webgl":"canvas");let n=3;countdown.hidden=false;countdown.textContent=String(n);ping(300);
   const timer=setInterval(()=>{n--;if(n>0){countdown.textContent=String(n);ping(340+n*70)}else{clearInterval(timer);countdown.textContent="GO";ping(650);setTimeout(()=>{countdown.hidden=true;state="running"},380)}},520);
 }
 function gameOver(){

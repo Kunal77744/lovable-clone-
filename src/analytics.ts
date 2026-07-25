@@ -3,7 +3,9 @@ import posthog from "posthog-js";
 const POSTHOG_KEY = "phc_vVVWKup2SjPFSxEuwJBxJB3HYPPkbTiMvSU2SrGf9rsw";
 const POSTHOG_HOST = "https://us.i.posthog.com";
 const SESSION_PREFIX = "wildvault_analytics:";
+const RUN_NUMBER_KEY = `${SESSION_PREFIX}run_number`;
 const sentThisPage = new Set<string>();
+let runNumberFallback = 0;
 
 type RenderingMode = "webgl" | "canvas";
 type HazardKind = "crate" | "arch" | "spikes";
@@ -54,6 +56,29 @@ posthog.init(POSTHOG_KEY, {
 
 export function captureGameOpened(renderingMode: RenderingMode) {
   captureOnce("game_opened", "game_opened", {
+    device_type: deviceType(),
+    rendering_mode: renderingMode,
+  });
+}
+
+export function captureRunStarted(renderingMode: RenderingMode) {
+  let runNumber = runNumberFallback + 1;
+
+  try {
+    const storedRunNumber = Number.parseInt(
+      sessionStorage.getItem(RUN_NUMBER_KEY) ?? "0",
+      10,
+    );
+    runNumber =
+      (Number.isFinite(storedRunNumber) && storedRunNumber >= 0
+        ? storedRunNumber
+        : 0) + 1;
+    sessionStorage.setItem(RUN_NUMBER_KEY, String(runNumber));
+  } catch {}
+  runNumberFallback = runNumber;
+
+  posthog.capture("run_started", {
+    run_number: runNumber,
     device_type: deviceType(),
     rendering_mode: renderingMode,
   });
