@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Run the shifting ruins, collect relics, and survive the Wildvault."
+    />
+    <meta name="theme-color" content="#081713" />
+    <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+    <title>Wildvault Run</title>
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="game-frame" aria-label="Wildvault Run game">
+        <canvas id="game" aria-label="Endless runner game canvas"></canvas>
+
+        <div class="topbar" aria-live="polite">
+          <div class="brand-lockup">
+            <span class="brand-mark" aria-hidden="true"></span>
+            <span>Wildvault</span>
+          </div>
+          <div class="stat-cluster">
+            <div class="stat">
+              <span class="stat-label">Relics</span>
+              <strong id="relics">0</strong>
+            </div>
+            <div class="stat">
+              <span class="stat-label">Distance</span>
+              <strong><span id="distance">0</span><small>m</small></strong>
+            </div>
+          </div>
+          <button id="sound-toggle" class="icon-button" type="button" aria-label="Toggle sound">
+            <span aria-hidden="true">◖</span>
+          </button>
+        </div>
+
+        <div id="start-panel" class="panel start-panel">
+          <p class="eyebrow">The vault is waking</p>
+          <h1>Outrun the wild.</h1>
+          <p class="intro">
+            Shift lanes, clear ancient traps, and carry every sun relic you can.
+          </p>
+          <button id="start-button" class="primary-button" type="button">
+            Begin the run
+            <span aria-hidden="true">→</span>
+          </button>
+          <div class="control-hints" aria-label="Keyboard controls">
+            <span><kbd>←</kbd><kbd>→</kbd> Move</span>
+            <span><kbd>↑</kbd> Jump</span>
+            <span><kbd>↓</kbd> Slide</span>
+          </div>
+        </div>
+
+        <div id="game-over-panel" class="panel game-over-panel" hidden>
+          <p class="eyebrow">Run complete</p>
+          <h2 id="final-distance">0m</h2>
+          <p id="run-summary">The vault remembers every step.</p>
+          <div class="result-row">
+            <span>Relics found</span>
+            <strong id="final-relics">0</strong>
+          </div>
+          <button id="restart-button" class="primary-button" type="button">
+            Run again
+            <span aria-hidden="true">↻</span>
+          </button>
+        </div>
+
+        <div id="toast" class="toast" aria-live="assertive"></div>
+
+        <div class="touch-controls" aria-label="Touch controls">
+          <button data-action="left" type="button" aria-label="Move left">←</button>
+          <button data-action="jump" type="button" aria-label="Jump">↑</button>
+          <button data-action="slide" type="button" aria-label="Slide">↓</button>
+          <button data-action="right" type="button" aria-label="Move right">→</button>
+        </div>
+
+        <div class="run-meter" aria-hidden="true">
+          <span id="run-meter-fill"></span>
+        </div>
+      </section>
+
+      <footer>
+        <span>© 2026 Wildvault</span>
+        <span class="footer-separator">•</span>
+        <a href="https://tin.computer" target="_blank" rel="noreferrer">
+          <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" fill="#66DC9D"/></svg>
+          Growth by Tin
+        </a>
+      </footer>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
