@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import "./style.css";
-import { captureFirstValue, captureGameOpened, captureRunResultShared, captureRunStarted } from "./analytics";
+import { captureFirstValue, captureGameOpened, captureRunEnded, captureRunResultShared, captureRunStarted } from "./analytics";
 import { createDailyRandom, formatDailyDate, getUtcDateKey, readDailyBest, saveDailyBest } from "./daily-challenge";
 import { completeDailyStreak, readDailyStreak, visibleDailyStreak } from "./daily-streak";
 import { readPersonalBest, savePersonalBest } from "./personal-best";
@@ -231,6 +231,7 @@ function gameOver(){
   const runDistance=Math.floor(distance),previousBest=personalBest;
   personalBest=savePersonalBest({distance:runDistance,relics});
   const distanceRecord=runDistance>previousBest.distance,relicRecord=relics>previousBest.relics;
+  captureRunEnded(renderer?"webgl":"canvas",activeRunNumber,activeMode,challengeTarget,runDistance,relics,distanceRecord);
   clearCountdown();setState("gameover");shake=.8;mission.hidden=true;$("#final-distance").textContent=String(runDistance);$("#final-relics").textContent=String(relics);$("#final-chain").textContent=`×${bestCombo}`;
   bestDistanceEl.textContent=String(personalBest.distance);bestRelicsEl.textContent=String(personalBest.relics);
   recordStatusEl.textContent=distanceRecord&&relicRecord?"Two new records":distanceRecord?"New distance record":relicRecord?"New sunshard record":"Expedition ended";

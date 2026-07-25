@@ -6,12 +6,14 @@ const SESSION_PREFIX = "wildvault_analytics:";
 const RUN_NUMBER_KEY = `${SESSION_PREFIX}run_number`;
 const sentThisPage = new Set<string>();
 const sharedRunNumbers = new Set<number>();
+const endedRunNumbers = new Set<number>();
 let runNumberFallback = 0;
 
 type RenderingMode = "webgl" | "canvas";
 type HazardKind = "crate" | "arch" | "spikes";
 type RunMode = "free" | "daily";
 type ShareMethod = "native" | "clipboard";
+type ChallengeOutcome = "beat" | "tied" | "missed" | "not_applicable";
 
 function deviceType() {
   const mobileUserAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -114,6 +116,41 @@ export function captureRunResultShared(
     share_method: shareMethod,
     distance_m: Math.max(0, Math.min(99_999, Math.floor(distance))),
     relic_count: Math.max(0, Math.min(9_999, Math.floor(relics))),
+    device_type: deviceType(),
+    rendering_mode: renderingMode,
+  });
+}
+
+export function captureRunEnded(
+  renderingMode: RenderingMode,
+  runNumber: number,
+  runMode: RunMode,
+  challengeTarget: number | null,
+  distance: number,
+  relics: number,
+  newDistanceBest: boolean,
+) {
+  if (endedRunNumbers.has(runNumber)) return;
+  endedRunNumbers.add(runNumber);
+
+  const distanceM = Math.max(0, Math.min(99_999, Math.floor(distance)));
+  const challengeOutcome: ChallengeOutcome =
+    challengeTarget === null
+      ? "not_applicable"
+      : distanceM > challengeTarget
+        ? "beat"
+        : distanceM === challengeTarget
+          ? "tied"
+          : "missed";
+
+  posthog.capture("run_ended", {
+    run_number: runNumber,
+    run_mode: runMode,
+    distance_m: distanceM,
+    relic_count: Math.max(0, Math.min(9_999, Math.floor(relics))),
+    new_distance_best: newDistanceBest,
+    challenge_present: challengeTarget !== null,
+    challenge_outcome: challengeOutcome,
     device_type: deviceType(),
     rendering_mode: renderingMode,
   });
